@@ -3,6 +3,7 @@ click
 requests 
 tqdm 
 soundfile
+pillow
 pyspng 
 ninja 
 imageio-ffmpeg==0.4.3 

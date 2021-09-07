@@ -1,6 +1,20 @@
-## StyleGAN2-ADA &mdash; Official PyTorch implementation
+## StyleGAN2-ADA, Audio Generation Implementation
 
-./docker_run.sh python3 train.py --outdir "./training-runs" --data "./data/full-dataset" --gpus 1 --cfg drumgan --resume "./training-runs/00021-full-dataset-drumgan/network-snapshot-000570.pkl"
+To train the network,
+
+Pre-process the dataset with `dataset_tool_audio.py`
+
+```.bash
+python3 dataset_tool_audio.py --source path/to/folder/with/audios --dest /path/to/save/dataset
+```
+
+Start training
+```.bash
+./docker_run.sh python3 train.py --outdir /where/to/save/generated/data --data /path/to/save/dataset --gpus 1 --cfg drumgan
+```
+
+
+
 
 ![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
 

@@ -41,6 +41,9 @@ def setup_training_loop_kwargs(
     cond       = None, # Train conditional model based on dataset labels: <bool>, default = False
     subset     = None, # Train with only N images: <int>, default = all
     mirror     = None, # Augment dataset with x-flips: <bool>, default = False
+    h          = None, # Mimimum height
+    w          = None, # Mimimum height
+
 
     # Base config.
     cfg        = None, # Base config: 'auto' (default), 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar'
@@ -79,7 +82,7 @@ def setup_training_loop_kwargs(
     args.num_gpus = gpus
 
     if snap is None:
-        snap = 50
+        snap = 1
     assert isinstance(snap, int)
     if snap < 1:
         raise UserError('--snap must be at least 1')
@@ -87,7 +90,7 @@ def setup_training_loop_kwargs(
     args.network_snapshot_ticks = snap
 
     if metrics is None:
-        metrics = ['fid50k_full']
+        metrics = []
     assert isinstance(metrics, list)
     if not all(metric_main.is_valid_metric(metric) for metric in metrics):
         raise UserError('\n'.join(['--metrics can only contain the following values:'] + metric_main.list_valid_metrics()))
@@ -104,6 +107,15 @@ def setup_training_loop_kwargs(
 
     assert data is not None
     assert isinstance(data, str)
+
+    if h is None:
+        h = 64
+    assert isinstance(h, int)
+
+    if w is None:
+        w = 2
+    assert isinstance(w, int)
+
     args.training_set_kwargs = dnnlib.EasyDict(class_name='training.dataset.ImageFolderDataset', path=data, use_labels=True, max_size=None, xflip=False)
     args.data_loader_kwargs = dnnlib.EasyDict(pin_memory=True, num_workers=3, prefetch_factor=2)
     try:
@@ -111,6 +123,15 @@ def setup_training_loop_kwargs(
         args.training_set_kwargs.resolution = training_set.resolution # be explicit about resolution
         args.training_set_kwargs.use_labels = training_set.has_labels # be explicit about labels
         args.training_set_kwargs.max_size = len(training_set) # be explicit about dataset size
+
+        # Warning: I added this
+        image_shape = training_set.image_shape
+        
+
+
+        init_res = [h,w]
+        #res_log2 = training_set.res_log2
+
         desc = training_set.name
         del training_set # conserve memory
     except IOError as err:
@@ -158,7 +179,9 @@ def setup_training_loop_kwargs(
         'paper512':  dict(ref_gpus=8,  kimg=25000,  mb=64, mbstd=8,  fmaps=1,   lrate=0.0025, gamma=0.5,  ema=20,  ramp=None, map=8),
         'paper1024': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=2,    ema=10,  ramp=None, map=8),
         'cifar':     dict(ref_gpus=2,  kimg=100000, mb=64, mbstd=32, fmaps=1,   lrate=0.0025, gamma=0.01, ema=500, ramp=0.05, map=2),
-    }
+        #'drumgan':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=0.01, ema=500, ramp=0.05, map=2),
+        'drumgan':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2),
+    }   
 
     assert cfg in cfg_specs
     spec = dnnlib.EasyDict(cfg_specs[cfg])
@@ -181,6 +204,8 @@ def setup_training_loop_kwargs(
     args.G_kwargs.synthesis_kwargs.num_fp16_res = args.D_kwargs.num_fp16_res = 4 # enable mixed-precision training
     args.G_kwargs.synthesis_kwargs.conv_clamp = args.D_kwargs.conv_clamp = 256 # clamp activations to avoid float16 overflow
     args.D_kwargs.epilogue_kwargs.mbstd_group_size = spec.mbstd
+    #Warning: I added this
+    args.G_kwargs.init_res = args.D_kwargs.init_res = list(init_res)
 
     args.G_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', lr=spec.lrate, betas=[0,0.99], eps=1e-8)
     args.D_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', lr=spec.lrate, betas=[0,0.99], eps=1e-8)
@@ -224,7 +249,7 @@ def setup_training_loop_kwargs(
     # ---------------------------------------------------
 
     if aug is None:
-        aug = 'ada'
+        aug = 'noaug'
     else:
         assert isinstance(aug, str)
         desc += f'-{aug}'
@@ -411,9 +436,11 @@ class CommaSeparatedList(click.ParamType):
 @click.option('--cond', help='Train conditional model based on dataset labels [default: false]', type=bool, metavar='BOOL')
 @click.option('--subset', help='Train with only N images [default: all]', type=int, metavar='INT')
 @click.option('--mirror', help='Enable dataset x-flips [default: false]', type=bool, metavar='BOOL')
+@click.option('--h', help='Height of the minimum resolution [default:64]', type=int, metavar='INT')
+@click.option('--w', help='Width of the minimum resolution [default:2]', type=int, metavar='INT')
 
 # Base config.
-@click.option('--cfg', help='Base config [default: auto]', type=click.Choice(['auto', 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar']))
+@click.option('--cfg', help='Base config [default: auto]', type=click.Choice(['auto', 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar','drumgan']))
 @click.option('--gamma', help='Override R1 gamma', type=float)
 @click.option('--kimg', help='Override training duration', type=int, metavar='INT')
 @click.option('--batch', help='Override batch size', type=int, metavar='INT')

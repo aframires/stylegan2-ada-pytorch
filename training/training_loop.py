@@ -16,6 +16,8 @@ import PIL.Image
 import numpy as np
 import torch
 import dnnlib
+import librosa
+import soundfile as sf
 from torch_utils import misc
 from torch_utils import training_stats
 from torch_utils.ops import conv2d_gradfix
@@ -26,16 +28,19 @@ from metrics import metric_main
 
 #----------------------------------------------------------------------------
 
+EXAMPLES_TO_GENERATE = 25
+
 def setup_snapshot_image_grid(training_set, random_seed=0):
     rnd = np.random.RandomState(random_seed)
-    gw = np.clip(7680 // training_set.image_shape[2], 7, 32)
-    gh = np.clip(4320 // training_set.image_shape[1], 4, 32)
+    # Size of the grid and divide it on how many images it fits
+    gw = 5
+    gh = 5
 
     # No labels => show random subset of training samples.
     if not training_set.has_labels:
         all_indices = list(range(len(training_set)))
         rnd.shuffle(all_indices)
-        grid_indices = [all_indices[i % len(all_indices)] for i in range(gw * gh)]
+        grid_indices = [all_indices[i % len(all_indices)] for i in range(EXAMPLES_TO_GENERATE)]
 
     else:
         # Group training samples by label.
@@ -66,22 +71,68 @@ def setup_snapshot_image_grid(training_set, random_seed=0):
 #----------------------------------------------------------------------------
 
 def save_image_grid(img, fname, drange, grid_size):
+    os.makedirs(fname)
     lo, hi = drange
     img = np.asarray(img, dtype=np.float32)
-    img = (img - lo) * (255 / (hi - lo))
-    img = np.rint(img).clip(0, 255).astype(np.uint8)
+    #img = (img - lo) * (255 / (hi - lo))
+    #img = np.rint(img).clip(0, 255).astype(np.uint8)
 
     gw, gh = grid_size
     _N, C, H, W = img.shape
-    img = img.reshape(gh, gw, C, H, W)
-    img = img.transpose(0, 3, 1, 4, 2)
-    img = img.reshape(gh * H, gw * W, C)
+    #img = img.reshape(gh, gw, C, H, W)
+    img = img.reshape(EXAMPLES_TO_GENERATE, C, H, W)
+    #img = img.transpose(0, 3, 1, 4, 2)
+    #img = img.reshape(gh * H, gw * W, C)
 
-    assert C in [1, 3]
-    if C == 1:
-        PIL.Image.fromarray(img[:, :, 0], 'L').save(fname)
-    if C == 3:
-        PIL.Image.fromarray(img, 'RGB').save(fname)
+    #assert C in [1, 3]
+    #if C == 1:
+    #    PIL.Image.fromarray(img[:, :, 0], 'L').save(fname)
+    #if C == 3:
+    #    PIL.Image.fromarray(img, 'RGB').save(fname)
+
+    for i in range(np.shape(img)[0]):
+        np.save(fname+str(i)+'.npy', img[i])
+        audio = spec_to_audio(img[i])
+        sf.write(fname+str(i)+'.wav', audio, 16000)
+
+
+#----------------------------------------------------------------------------
+
+def norm_audio(x):
+    if max(x) != 0:
+        return x/max(x)
+    else:
+        return x
+
+#----------------------------------------------------------------------------
+
+def istft(x):
+    return librosa.core.istft(
+            x,
+            hop_length=512,
+            win_length=2048)
+
+#----------------------------------------------------------------------------
+
+def lin_to_complex(x):
+    assert len(x.shape) == 3, "Wrong shape"
+    if type(x) is not np.ndarray:
+        x = np.array(x)
+    return x[0] + 1j * x[1]
+
+#----------------------------------------------------------------------------
+
+def add_dc(x):
+    if type(x) is not np.ndarray: 
+        x = x.numpy()
+    return np.concatenate(
+        [np.zeros((2, 1, x.shape[-1])), x], axis=-2)
+
+#----------------------------------------------------------------------------
+
+def spec_to_audio(spectogram):
+    audio = norm_audio(istft(lin_to_complex(add_dc(spectogram))))
+    return audio
 
 #----------------------------------------------------------------------------
 
@@ -109,10 +160,10 @@ def training_loop(
     ada_target              = None,     # ADA target value. None = fixed p.
     ada_interval            = 4,        # How often to perform ADA adjustment?
     ada_kimg                = 500,      # ADA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
-    total_kimg              = 25000,    # Total length of the training, measured in thousands of real images.
-    kimg_per_tick           = 4,        # Progress snapshot interval.
-    image_snapshot_ticks    = 50,       # How often to save image snapshots? None = disable.
-    network_snapshot_ticks  = 50,       # How often to save network snapshots? None = disable.
+    total_kimg              = 250000,    # Total length of the training, measured in thousands of real images.
+    kimg_per_tick           = 30,        # Progress snapshot interval.
+    image_snapshot_ticks    = 5,       # How often to save image snapshots? None = disable.
+    network_snapshot_ticks  = 5,       # How often to save network snapshots? None = disable.
     resume_pkl              = None,     # Network pickle to resume training from.
     cudnn_benchmark         = True,     # Enable torch.backends.cudnn.benchmark?
     allow_tf32              = False,    # Enable torch.backends.cuda.matmul.allow_tf32 and torch.backends.cudnn.allow_tf32?
@@ -218,13 +269,13 @@ def training_loop(
     grid_z = None
     grid_c = None
     if rank == 0:
-        print('Exporting sample images...')
+        print('...')
         grid_size, images, labels = setup_snapshot_image_grid(training_set=training_set)
-        save_image_grid(images, os.path.join(run_dir, 'reals.png'), drange=[0,255], grid_size=grid_size)
+        save_image_grid(images, os.path.join(run_dir, 'reals/'), drange=[0,255], grid_size=grid_size)
         grid_z = torch.randn([labels.shape[0], G.z_dim], device=device).split(batch_gpu)
         grid_c = torch.from_numpy(labels).to(device).split(batch_gpu)
         images = torch.cat([G_ema(z=z, c=c, noise_mode='const').cpu() for z, c in zip(grid_z, grid_c)]).numpy()
-        save_image_grid(images, os.path.join(run_dir, 'fakes_init.png'), drange=[-1,1], grid_size=grid_size)
+        save_image_grid(images, os.path.join(run_dir, 'fakes_init/'), drange=[-1,1], grid_size=grid_size)
 
     # Initialize logs.
     if rank == 0:
@@ -347,7 +398,7 @@ def training_loop(
         # Save image snapshot.
         if (rank == 0) and (image_snapshot_ticks is not None) and (done or cur_tick % image_snapshot_ticks == 0):
             images = torch.cat([G_ema(z=z, c=c, noise_mode='const').cpu() for z, c in zip(grid_z, grid_c)]).numpy()
-            save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}.png'), drange=[-1,1], grid_size=grid_size)
+            save_image_grid(images,os.path.join(run_dir, f'fakes{cur_nimg//1000:06d}/'), drange=[-1,1], grid_size=grid_size)
 
         # Save network snapshot.
         snapshot_pkl = None

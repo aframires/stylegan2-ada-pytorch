@@ -9,15 +9,9 @@
 import os
 import numpy as np
 import zipfile
-import PIL.Image
 import json
 import torch
 import dnnlib
-
-try:
-    import pyspng
-except ImportError:
-    pyspng = None
 
 #----------------------------------------------------------------------------
 
@@ -86,7 +80,8 @@ class Dataset(torch.utils.data.Dataset):
         image = self._load_raw_image(self._raw_idx[idx])
         assert isinstance(image, np.ndarray)
         assert list(image.shape) == self.image_shape
-        assert image.dtype == np.uint8
+        #warning: Disabled the check for uint8
+        #assert image.dtype == np.uint8
         if self._xflip[idx]:
             assert image.ndim == 3 # CHW
             image = image[:, :, ::-1]
@@ -122,9 +117,26 @@ class Dataset(torch.utils.data.Dataset):
 
     @property
     def resolution(self):
+        def calc_res(shape):
+            base0 = 2**int(np.log2(shape[0]))
+            base1 = 2**int(np.log2(shape[1]))
+            base = min(base0, base1)
+            min_res = min(shape[0], shape[1])
+            
+            def int_log2(xs, base):
+                return [x * 2**(2-int(np.log2(base))) % 1 == 0 for x in xs]
+            if min_res != base or max(*shape) / min(*shape) >= 2:
+                if np.log2(base) < 10 and all(int_log2(shape, base*2)):
+                    base = base * 2
+
+            return base        
+                
         assert len(self.image_shape) == 3 # CHW
-        assert self.image_shape[1] == self.image_shape[2]
-        return self.image_shape[1]
+# !!! custom init res
+        max_res = calc_res(self.image_shape[1:])
+        return max_res
+        # assert self.image_shape[1] == self.image_shape[2]
+        # return self.image_shape[1]
 
     @property
     def label_shape(self):
@@ -169,15 +181,15 @@ class ImageFolderDataset(Dataset):
         else:
             raise IOError('Path must point to a directory or zip')
 
-        PIL.Image.init()
-        self._image_fnames = sorted(fname for fname in self._all_fnames if self._file_ext(fname) in PIL.Image.EXTENSION)
+        #PIL.Image.init()
+        self._image_fnames = sorted(fname for fname in self._all_fnames if self._file_ext(fname) in ['.npy'])
         if len(self._image_fnames) == 0:
             raise IOError('No image files found in the specified path')
 
         name = os.path.splitext(os.path.basename(self._path))[0]
         raw_shape = [len(self._image_fnames)] + list(self._load_raw_image(0).shape)
-        if resolution is not None and (raw_shape[2] != resolution or raw_shape[3] != resolution):
-            raise IOError('Image files do not match the specified resolution')
+        #if resolution is not None and (raw_shape[2] != resolution): #or raw_shape[3] != resolution): warning: Disabled the square check
+        #    raise IOError('Image files do not match the specified resolution')
         super().__init__(name=name, raw_shape=raw_shape, **super_kwargs)
 
     @staticmethod
@@ -210,13 +222,10 @@ class ImageFolderDataset(Dataset):
     def _load_raw_image(self, raw_idx):
         fname = self._image_fnames[raw_idx]
         with self._open_file(fname) as f:
-            if pyspng is not None and self._file_ext(fname) == '.png':
-                image = pyspng.load(f.read())
-            else:
-                image = np.array(PIL.Image.open(f))
+            image = np.load(f)
         if image.ndim == 2:
             image = image[:, :, np.newaxis] # HW => HWC
-        image = image.transpose(2, 0, 1) # HWC => CHW
+        #image = image.transpose(2, 0, 1) # HWC => CHW
         return image
 
     def _load_raw_labels(self):

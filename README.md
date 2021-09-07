@@ -1,5 +1,7 @@
 ## StyleGAN2-ADA &mdash; Official PyTorch implementation
 
+./docker_run.sh python3 train.py --outdir "./training-runs" --data "./data/full-dataset" --gpus 1 --cfg drumgan --resume "./training-runs/00021-full-dataset-drumgan/network-snapshot-000570.pkl"
+
 ![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
 
 **Training Generative Adversarial Networks with Limited Data**<br>

@@ -1,0 +1,9 @@
+torch==1.7.1
+click 
+requests 
+tqdm 
+soundfile
+pyspng 
+ninja 
+imageio-ffmpeg==0.4.3 
+librosa==0.8.1

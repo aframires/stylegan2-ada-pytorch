@@ -4,6 +4,7 @@ requests
 tqdm 
 soundfile
 pillow
+psutil
 pyspng 
 ninja 
 imageio-ffmpeg==0.4.3 

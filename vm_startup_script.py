@@ -64,7 +64,7 @@ def train_model(dataset_dir: str, training_data_out_dir: str, train_config: str)
     training_cmd = f'python3.8 train.py --outdir {training_data_out_dir} --data {dataset_dir} --gpus 1 --cfg {train_config}'
 
     call(f'tmux new -d -s {train_config}_training'.split(' '), stdout=training_log, stderr=training_log)
-    call(['tmux', 'send-keys', '-t', f'{train_config}_training', f'{training_cmd}', 'Enter'], stdout=training_log, stderr=training_log)
+    call(['tmux', 'send-keys', '-t', f'{train_config}_training', f'{training_cmd}'.split(' '), 'Enter'], stdout=training_log, stderr=training_log)
 
 
 if __name__ == "__main__":

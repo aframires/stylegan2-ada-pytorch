@@ -40,7 +40,7 @@ def copy_audio_data_from_bucket(source_dir: str, dest_dir: str):
 
 
 def render_audio_data_to_dataset(audio_data_dir: str, dataset_dir: str):
-    call(f"dataset_tool_audio.py --source {audio_data_dir} --dest {dataset_dir}".split(" "))
+    call(f"python3.8 dataset_tool_audio.py --source {audio_data_dir} --dest {dataset_dir}".split(" "))
 
 
 def train_model(dataset_dir: str, training_data_out_dir: str, train_config: str):

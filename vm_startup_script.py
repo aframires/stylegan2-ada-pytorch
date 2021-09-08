@@ -34,7 +34,7 @@ def install_dependencies():
 
 def copy_audio_data_from_bucket(source_dir: str, dest_dir: str):
     if not Path(dest_dir).exists():
-        Path.mkdir(dest_dir)
+        Path(dest_dir).mkdir()
         
     call(f"gsutil -m cp -r gs://{source_dir}/* {dest_dir}".split(" "))
 

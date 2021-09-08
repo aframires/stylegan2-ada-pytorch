@@ -17,6 +17,12 @@ def get_args():
                         , help='')
 
     # optional arguments
+    parser.add_argument('--data_prep'
+                    , type=int
+                    , default=1
+                    , required=True
+                    , help='')
+
     parser.add_argument('--local_audio_data_dir'
                         , type=str
                         , default='audio/'
@@ -66,6 +72,8 @@ if __name__ == "__main__":
     setup_args = get_args()
 
     install_dependencies()
-    copy_audio_data_from_bucket(setup_args.bucket_audio_data_dir, setup_args.local_audio_data_dir)
-    render_audio_data_to_dataset(setup_args.local_audio_data_dir, setup_args.local_dataset_dir)
+
+    if setup_args.data_prep:
+        copy_audio_data_from_bucket(setup_args.bucket_audio_data_dir, setup_args.local_audio_data_dir)
+        render_audio_data_to_dataset(setup_args.local_audio_data_dir, setup_args.local_dataset_dir)
     train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, setup_args.train_config)

@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from pathlib import Path
 from subprocess import call
 
 def get_args():
@@ -32,7 +33,10 @@ def install_dependencies():
 
 
 def copy_audio_data_from_bucket(source_dir: str, dest_dir: str):
-    call(f"gsutil -m cp -r gs://{source_dir} {dest_dir}".split(" "))
+    if not Path(dest_dir).exists():
+        Path.mkdir(dest_dir)
+        
+    call(f"gsutil -m cp -r gs://{source_dir}/* {dest_dir}".split(" "))
 
 
 def render_audio_data_to_dataset(audio_data_dir: str, dataset_dir: str):

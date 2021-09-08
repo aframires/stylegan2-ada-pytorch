@@ -19,21 +19,18 @@ def get_args():
     # optional arguments
     parser.add_argument('--local_audio_data_dir'
                         , type=str
-                        , required=True
                         , default='audio/'
                         , help='')
 
     parser.add_argument('--local_dataset_dir'
                         , type=str
-                        , required=True
                         , default='dataset/'
                         , help='')
 
     parser.add_argument('--local_saved_training_data_dir'
-                    , type=str
-                    , required=True
-                    , default='saved_training_data/'
-                    , help='')
+                        , type=str
+                        , default='saved_training_data/'
+                        , help='')
 
 
     return parser.parse_args()

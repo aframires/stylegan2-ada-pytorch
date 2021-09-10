@@ -88,6 +88,8 @@ if __name__ == "__main__":
 
     install_dependencies()
 
+    call('sleep 20'.split(' '))
+
     if setup_args.data_prep:
         copy_audio_data_from_bucket(setup_args.bucket_audio_data_dir, setup_args.local_audio_data_dir)
         render_audio_data_to_dataset(setup_args.local_audio_data_dir, setup_args.local_dataset_dir)

@@ -180,7 +180,9 @@ def setup_training_loop_kwargs(
         'paper1024': dict(ref_gpus=8,  kimg=25000,  mb=32, mbstd=4,  fmaps=1,   lrate=0.002,  gamma=2,    ema=10,  ramp=None, map=8),
         'cifar':     dict(ref_gpus=2,  kimg=100000, mb=64, mbstd=32, fmaps=1,   lrate=0.0025, gamma=0.01, ema=500, ramp=0.05, map=2),
         #'drumgan':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=0.01, ema=500, ramp=0.05, map=2),
-        'drumgan':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2),
+        'drumgan':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=2),
+        'drumgan-PL4':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=4),
+        'drumgan-PL0':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=0),
     }   
 
     assert cfg in cfg_specs
@@ -209,7 +211,7 @@ def setup_training_loop_kwargs(
 
     args.G_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', lr=spec.lrate, betas=[0,0.99], eps=1e-8)
     args.D_opt_kwargs = dnnlib.EasyDict(class_name='torch.optim.Adam', lr=spec.lrate, betas=[0,0.99], eps=1e-8)
-    args.loss_kwargs = dnnlib.EasyDict(class_name='training.loss.StyleGAN2Loss', r1_gamma=spec.gamma)
+    args.loss_kwargs = dnnlib.EasyDict(class_name='training.loss.StyleGAN2Loss', r1_gamma=spec.gamma, pl_weight=spec.pl_weight)
 
     args.total_kimg = spec.kimg
     args.batch_size = spec.mb
@@ -440,7 +442,7 @@ class CommaSeparatedList(click.ParamType):
 @click.option('--w', help='Width of the minimum resolution [default:2]', type=int, metavar='INT')
 
 # Base config.
-@click.option('--cfg', help='Base config [default: auto]', type=click.Choice(['auto', 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar','drumgan']))
+@click.option('--cfg', help='Base config [default: auto]', type=click.Choice(['auto', 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar', 'drumgan', 'drumgan-PL4', 'drumgan-PL0']))
 @click.option('--gamma', help='Override R1 gamma', type=float)
 @click.option('--kimg', help='Override training duration', type=int, metavar='INT')
 @click.option('--batch', help='Override batch size', type=int, metavar='INT')

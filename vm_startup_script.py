@@ -13,12 +13,17 @@ def get_args():
     # optional arguments
     parser.add_argument('--data_prep'
                         , type=int
-                        , default=1
+                        , default=0
                         , help='')
 
     parser.add_argument('--bucket_audio_data_dir'
                         , type=str
                         , default='sound-similarity/ni-samples-drums'
+                        , help='')
+
+    parser.add_argument('--bucket_dataset_dir'
+                        , type=str
+                        , default='sound-similarity/stylegan2-dataset-antonio'
                         , help='')
 
     parser.add_argument('--train'
@@ -60,6 +65,13 @@ def render_audio_data_to_dataset(audio_data_dir: str, dataset_dir: str):
     call(f'python3.8 dataset_tool_audio.py --source {audio_data_dir} --dest {dataset_dir}'.split(' '))
 
 
+def copy_dataset_from_bucket(source_dir: str, dest_dir: str):
+    if not Path(dest_dir).exists():
+        Path(dest_dir).mkdir()
+
+    call(f'gsutil -m cp -r gs://{source_dir}/* {dest_dir}'.split(' '))
+
+
 def train_model(dataset_dir: str, training_data_out_dir: str, train_config: str):
     Path('setup_log.log').touch()
     training_log = open('training_log.log', 'w')
@@ -80,7 +92,10 @@ if __name__ == "__main__":
         copy_audio_data_from_bucket(setup_args.bucket_audio_data_dir, setup_args.local_audio_data_dir)
         render_audio_data_to_dataset(setup_args.local_audio_data_dir, setup_args.local_dataset_dir)
 
-    if setup_args.train:
+    else:
+        copy_dataset_from_bucket(setup_args.bucket_dataset_dir, setup_args.local_dataset_dir)
+
+    if setup_args.train:        
 
         config = None
         try:

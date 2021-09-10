@@ -6,28 +6,25 @@ from subprocess import call
 def get_args():
     parser = ArgumentParser(description='Configure training environment for StyleGAN2-ADA')
 
-    parser.add_argument('--bucket_audio_data_dir'
-                        , type=str
-                        , required=True
-                        , help='')
-
     parser.add_argument('--train_config'
                         , type=str
-                        , required=True
                         , help='')
 
     # optional arguments
     parser.add_argument('--data_prep'
-                    , type=int
-                    , default=1
-                    , required=True
-                    , help='')
+                        , type=int
+                        , default=1
+                        , help='')
+
+    parser.add_argument('--bucket_audio_data_dir'
+                        , type=str
+                        , default='sound-similarity/ni-samples-drums'
+                        , help='')
 
     parser.add_argument('--train'
-                , type=int
-                , default=1
-                , required=True
-                , help='')
+                        , type=int
+                        , default=1
+                        , help='')
 
     parser.add_argument('--local_audio_data_dir'
                         , type=str
@@ -55,7 +52,7 @@ def install_dependencies():
 def copy_audio_data_from_bucket(source_dir: str, dest_dir: str):
     if not Path(dest_dir).exists():
         Path(dest_dir).mkdir()
-        
+
     call(f'gsutil -m cp -r gs://{source_dir}/* {dest_dir}'.split(' '))
 
 
@@ -84,4 +81,12 @@ if __name__ == "__main__":
         render_audio_data_to_dataset(setup_args.local_audio_data_dir, setup_args.local_dataset_dir)
 
     if setup_args.train:
+
+        config = None
+        try:
+            config = setup_args.train_config        
+        except:
+            print('Need to specify a traing config! Please run script again.')
+            exit()
+
         train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, setup_args.train_config)

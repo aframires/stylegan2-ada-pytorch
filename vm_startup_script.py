@@ -104,4 +104,4 @@ if __name__ == "__main__":
             print('Need to specify a traing config! Please run script again.')
             exit()
 
-        train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, setup_args.train_config)
+        train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, config)

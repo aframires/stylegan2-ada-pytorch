@@ -183,6 +183,7 @@ def setup_training_loop_kwargs(
         'drumgan':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=2),
         'drumgan-PL4':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=4),
         'drumgan-PL0':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=0),
+        'drumgan-PL0-lr':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.002, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=0),
     }   
 
     assert cfg in cfg_specs

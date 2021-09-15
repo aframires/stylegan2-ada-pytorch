@@ -31,6 +31,11 @@ def get_args():
                         , default=1
                         , help='')
 
+    parser.add_argument('--gpus'
+                    , type=int
+                    , default=1
+                    , help='')
+
     parser.add_argument('--augmentation'
                         , type=int
                         , default=0
@@ -77,11 +82,11 @@ def copy_dataset_from_bucket(source_dir: str, dest_dir: str):
     call(f'gsutil -m cp -r gs://{source_dir}/* {dest_dir}'.split(' '))
 
 
-def train_model(dataset_dir: str, training_data_out_dir: str, train_config: str, aug: bool = False):
+def train_model(dataset_dir: str, training_data_out_dir: str, num_gpus: int, train_config: str, aug: bool = False):
     Path('setup_log.log').touch()
     training_log = open('training_log.log', 'w')
 
-    training_cmd = f'python3.8 train.py --outdir {training_data_out_dir} --data {dataset_dir} --gpus 1 --cfg {train_config}'
+    training_cmd = f'python3.8 train.py --outdir {training_data_out_dir} --data {dataset_dir} --gpus {num_gpus} --cfg {train_config}'
     if (aug):
         training_cmd += ' --aug ada --augpipe bg'
 
@@ -113,4 +118,4 @@ if __name__ == "__main__":
             print('Need to specify a traing config! Please run script again.')
             exit()
 
-        train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, config, setup_args.augmentation == 1)
+        train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, setup_args.gpus, config, setup_args.augmentation == 1)

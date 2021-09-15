@@ -184,8 +184,11 @@ def setup_training_loop_kwargs(
         'drumgan-PL4':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=4),
         'drumgan-PL0':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.0015, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=0),
         'drumgan-PL0-lr':   dict(ref_gpus=1,  kimg=250000, mb=8, mbstd=4, fmaps=1,   lrate=0.002, gamma=26, ema=2.5, ramp=0.05, map=2, pl_weight=0),
-    }   
+        'drumgan-4gpu-1024':   dict(ref_gpus=4,  kimg=250000, mb=32, mbstd=8, fmaps=1,   lrate=0.002, gamma=6.5, ema=10, ramp=0.05, map=2, pl_weight=0),
+        'drumgan-4gpu-32':   dict(ref_gpus=4,  kimg=250000, mb=32, mbstd=8, fmaps=0.5,   lrate=0.0025, gamma=0.0064, ema=10, ramp=0.05, map=2, pl_weight=0),
 
+    }   
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COnfIRmar O LEARNING RATE NO Q TA A CORRER E METER O OUTRO
     assert cfg in cfg_specs
     spec = dnnlib.EasyDict(cfg_specs[cfg])
     if cfg == 'auto':
@@ -443,7 +446,7 @@ class CommaSeparatedList(click.ParamType):
 @click.option('--w', help='Width of the minimum resolution [default:2]', type=int, metavar='INT')
 
 # Base config.
-@click.option('--cfg', help='Base config [default: auto]', type=click.Choice(['auto', 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar', 'drumgan', 'drumgan-PL4', 'drumgan-PL0']))
+@click.option('--cfg', help='Base config [default: auto]', type=click.Choice(['auto', 'stylegan2', 'paper256', 'paper512', 'paper1024', 'cifar', 'drumgan', 'drumgan-PL4', 'drumgan-PL0','drumgan-4gpu-1024','drumgan-4gpu-32']))
 @click.option('--gamma', help='Override R1 gamma', type=float)
 @click.option('--kimg', help='Override training duration', type=int, metavar='INT')
 @click.option('--batch', help='Override batch size', type=int, metavar='INT')

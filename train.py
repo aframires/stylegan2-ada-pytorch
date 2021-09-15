@@ -188,7 +188,6 @@ def setup_training_loop_kwargs(
         'drumgan-4gpu-32':   dict(ref_gpus=4,  kimg=250000, mb=32, mbstd=8, fmaps=0.5,   lrate=0.0025, gamma=0.0064, ema=10, ramp=0.05, map=2, pl_weight=0),
 
     }   
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!! COnfIRmar O LEARNING RATE NO Q TA A CORRER E METER O OUTRO
     assert cfg in cfg_specs
     spec = dnnlib.EasyDict(cfg_specs[cfg])
     if cfg == 'auto':

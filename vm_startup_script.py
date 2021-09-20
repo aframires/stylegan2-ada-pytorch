@@ -8,6 +8,7 @@ def get_args():
 
     parser.add_argument('--train_config'
                         , type=str
+                        , required=True
                         , help='')
 
     # optional arguments
@@ -32,9 +33,9 @@ def get_args():
                         , help='')
 
     parser.add_argument('--gpus'
-                    , type=int
-                    , default=1
-                    , help='')
+                        , type=int
+                        , default=1
+                        , help='')
 
     parser.add_argument('--augmentation'
                         , type=int
@@ -56,6 +57,10 @@ def get_args():
                         , default='saved_training_data/'
                         , help='')
 
+    parser.add_argument('--resume_path'
+                        , type=str
+                        , default=''
+                        , help='gs://...')
 
     return parser.parse_args()
 
@@ -82,13 +87,16 @@ def copy_dataset_from_bucket(source_dir: str, dest_dir: str):
     call(f'gsutil -m cp -r gs://{source_dir}/* {dest_dir}'.split(' '))
 
 
-def train_model(dataset_dir: str, training_data_out_dir: str, num_gpus: int, train_config: str, aug: bool = False):
+def train_model(dataset_dir: str, training_data_out_dir: str, num_gpus: int, train_config: str, resume_path: str, aug: bool = False):
     Path('setup_log.log').touch()
     training_log = open('training_log.log', 'w')
 
     training_cmd = f'python3.8 train.py --outdir {training_data_out_dir} --data {dataset_dir} --gpus {num_gpus} --cfg {train_config}'
     if (aug):
         training_cmd += ' --aug ada --augpipe bg'
+
+    if not resume_path == '':
+        training_cmd += f' --resume {resume_path}'
 
     call(f'tmux new -d -s {train_config}_training'.split(' '), stdout=training_log, stderr=training_log)
     call(['tmux', 'send-keys', '-t', f'{train_config}_training', f'{training_cmd}', 'Enter'], stdout=training_log, stderr=training_log)
@@ -118,4 +126,4 @@ if __name__ == "__main__":
             print('Need to specify a traing config! Please run script again.')
             exit()
 
-        train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, setup_args.gpus, config, setup_args.augmentation == 1)
+        train_model(setup_args.local_dataset_dir, setup_args.local_saved_training_data_dir, setup_args.gpus, config, setup_args.resume_path, setup_args.augmentation == 1)

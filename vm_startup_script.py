@@ -96,7 +96,7 @@ def train_model(dataset_dir: str, training_data_out_dir: str, num_gpus: int, tra
         training_cmd += ' --aug ada --augpipe bg'
 
     if not resume_path == '':
-        Path.mkdir('./model_archive')
+        Path('./model_archive').mkdir()
         model_name = Path(f'{resume_path}').parts[-1]
         call(f'gsutil cp -r {resume_path} ./model_archive')
         training_cmd += f' --resume ./model_archive/{model_name}'

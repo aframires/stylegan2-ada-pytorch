@@ -98,7 +98,7 @@ def train_model(dataset_dir: str, training_data_out_dir: str, num_gpus: int, tra
     if not resume_path == '':
         Path('./model_archive').mkdir()
         model_name = Path(f'{resume_path}').parts[-1]
-        call(f'gsutil cp -r {resume_path} ./model_archive')
+        call(f'gsutil cp -r {resume_path} stylegan2-ada-pytorch/model_archive')
         training_cmd += f' --resume /stylegan2-ada-pytorch/model_archive/{model_name}'
 
     call(f'tmux new -d -s {train_config}_training'.split(' '), stdout=training_log, stderr=training_log)

@@ -6,16 +6,19 @@
 # distribution of this software and related documentation without an express
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
-"""Generate images using pretrained network pickle."""
+"""Generate audios using pretrained network pickle."""
 
 import os
 import re
+from pathlib import Path
 from typing import List, Optional
+from training_loop import spec_to_audio
 
 import click
 import dnnlib
 import numpy as np
 import PIL.Image
+import soundfile as sf
 import torch
 
 import legacy
@@ -36,16 +39,16 @@ def num_range(s: str) -> List[int]:
 
 @click.command()
 @click.pass_context
-@click.option('--network', 'network_pkl', help='Network pickle filename', required=True)
+@click.option('--indir', 'indir', help='Folder which contains the pickles', required=True)
 @click.option('--seeds', type=num_range, help='List of random seeds')
 @click.option('--trunc', 'truncation_psi', type=float, help='Truncation psi', default=1, show_default=True)
 @click.option('--class', 'class_idx', type=int, help='Class label (unconditional if not specified)')
 @click.option('--noise-mode', help='Noise mode', type=click.Choice(['const', 'random', 'none']), default='const', show_default=True)
 @click.option('--projected-w', help='Projection result file', type=str, metavar='FILE')
-@click.option('--outdir', help='Where to save the output images', type=str, required=True, metavar='DIR')
-def generate_images(
+@click.option('--outdir', help='Where to save the output audios', type=str, required=True, metavar='DIR')
+def generate_all_audios(
     ctx: click.Context,
-    network_pkl: str,
+    indir: str,
     seeds: Optional[List[int]],
     truncation_psi: float,
     noise_mode: str,
@@ -53,31 +56,20 @@ def generate_images(
     class_idx: Optional[int],
     projected_w: Optional[str]
 ):
-    """Generate images using pretrained network pickle.
+    seeds = 0-5000
+    truncation = 0.7
+    path_count = 0
+    for path in Path(indir).rglob('*.pkl'):
+        outdir_epoch = os.path.join(outdir, str(path.parts[1])[0:5], str(path_count))
+        path_count = path_count + 1
+        generate_audios(path,seeds,truncation_psi,outdir_epoch)
 
-    Examples:
 
-    \b
-    # Generate curated MetFaces images without truncation (Fig.10 left)
-    python generate.py --outdir=out --trunc=1 --seeds=85,265,297,849 \\
-        --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
-
-    \b
-    # Generate uncurated MetFaces images with truncation (Fig.12 upper left)
-    python generate.py --outdir=out --trunc=0.7 --seeds=600-605 \\
-        --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
-
-    \b
-    # Generate class conditional CIFAR-10 images (Fig.17 left, Car)
-    python generate.py --outdir=out --seeds=0-35 --class=1 \\
-        --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/cifar10.pkl
-
-    \b
-    # Render an image from projected W
-    python generate.py --outdir=out --projected_w=projected_w.npz \\
-        --network=https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metfaces.pkl
-    """
-
+def generate_audios(network_pkl,seeds,truncation_psi,outdir):
+    class_idx = None
+    noise_mode = 'const'
+    projected_w = None
+    
     print('Loading networks from "%s"...' % network_pkl)
     device = torch.device('cuda')
     with dnnlib.util.open_url(network_pkl) as f:
@@ -89,7 +81,7 @@ def generate_images(
     if projected_w is not None:
         if seeds is not None:
             print ('warn: --seeds is ignored when using --projected-w')
-        print(f'Generating images from projected W "{projected_w}"')
+        print(f'Generating audios from projected W "{projected_w}"')
         ws = np.load(projected_w)['w']
         ws = torch.tensor(ws, device=device) # pylint: disable=not-callable
         assert ws.shape[1:] == (G.num_ws, G.w_dim)
@@ -100,30 +92,33 @@ def generate_images(
         return
 
     if seeds is None:
-        ctx.fail('--seeds option is required when not using --projected-w')
+        print('--seeds option is required when not using --projected-w')
 
     # Labels.
     label = torch.zeros([1, G.c_dim], device=device)
     if G.c_dim != 0:
         if class_idx is None:
-            ctx.fail('Must specify class label with --class when using a conditional network')
+            print('Must specify class label with --class when using a conditional network')
         label[:, class_idx] = 1
     else:
         if class_idx is not None:
             print ('warn: --class=lbl ignored when running on an unconditional network')
 
-    # Generate images.
+    # Generate audios.
     for seed_idx, seed in enumerate(seeds):
         print('Generating image for seed %d (%d/%d) ...' % (seed, seed_idx, len(seeds)))
         z = torch.from_numpy(np.random.RandomState(seed).randn(1, G.z_dim)).to(device)
         img = G(z, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
-        img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
-        PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/seed{seed:04d}.png')
+        #img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+        #PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/seed{seed:04d}.png')
+        audio = spec_to_audio(img[0].cpu().numpy())
+        sf.write(f'{outdir}/seed{seed:04d}.wav', audio, 16000)
 
 
 #----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    generate_images() # pylint: disable=no-value-for-parameter
+    
+    generate_all_audios() # pylint: disable=no-value-for-parameter
 
 #----------------------------------------------------------------------------

@@ -12,7 +12,7 @@ import os
 import re
 from pathlib import Path
 from typing import List, Optional
-from training_loop import spec_to_audio
+from training.training_loop import spec_to_audio
 
 import click
 import dnnlib
@@ -56,13 +56,13 @@ def generate_all_audios(
     class_idx: Optional[int],
     projected_w: Optional[str]
 ):
-    seeds = 0-5000
+    seeds = num_range("0-4999")
     truncation = 0.7
     path_count = 0
     for path in Path(indir).rglob('*.pkl'):
         outdir_epoch = os.path.join(outdir, str(path.parts[1])[0:5], str(path_count))
         path_count = path_count + 1
-        generate_audios(path,seeds,truncation_psi,outdir_epoch)
+        generate_audios(str(path),seeds,truncation_psi,outdir_epoch)
 
 
 def generate_audios(network_pkl,seeds,truncation_psi,outdir):

@@ -13,8 +13,10 @@ Start training
 ./docker_run.sh python3 train.py --outdir /where/to/save/generated/data --data /path/to/save/dataset --gpus 1 --cfg drumgan
 ```
 
-
-
+Generate examples
+```.bash
+./docker_run.sh python3 generate.py --indir training-runs --outdir generated_data
+```
 
 ![Teaser image](./docs/stylegan2-ada-teaser-1024x252.png)
 

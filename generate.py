@@ -58,10 +58,8 @@ def generate_all_audios(
 ):
     seeds = num_range("0-4999")
     truncation = 0.7
-    path_count = 0
     for path in Path(indir).rglob('*.pkl'):
-        outdir_epoch = os.path.join(outdir, str(path.parts[1])[0:5], str(path_count))
-        path_count = path_count + 1
+        outdir_epoch = os.path.join(outdir, str(path.parts[1])[0:5], str(path.stem)[-6:])
         generate_audios(str(path),seeds,truncation_psi,outdir_epoch)
 
 

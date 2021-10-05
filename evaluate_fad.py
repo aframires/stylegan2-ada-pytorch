@@ -6,7 +6,7 @@ from pathlib import Path
 from sys import platform
 
 k_frechet_audio_distance_dir = 'google_research/frechet_audio_distance'
-input_dir = 'generated_data'
+input_dir = 'generated_frechet_audio'
 out_dir = 'analysis_data'
 dataset_embeddings = 'stats/dataset_embeddings'
 k_frechet_bg_stats_filename = 'analysis_data/NI_background.cvs'

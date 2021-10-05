@@ -7,7 +7,7 @@ from sys import platform
 
 k_frechet_audio_distance_dir = 'google_research/frechet_audio_distance'
 bg_data_path = '../ni-samples-drums-16k/'
-input_dir = 'generated_data'
+input_dir = 'generated_frechet_audio'
 out_dir = 'analysis_data'
 bg_emb = os.path.join(out_dir, 'emb_bg.csv')
 vggish_model_path = k_frechet_audio_distance_dir / \

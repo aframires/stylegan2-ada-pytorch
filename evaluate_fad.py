@@ -9,7 +9,7 @@ k_frechet_audio_distance_dir = 'google_research/frechet_audio_distance'
 bg_data_path = '../ni-samples-drums-16k/'
 input_dir = 'generated_frechet_audio'
 out_dir = 'analysis_data'
-bg_emb = os.path.join(out_dir, 'emb_bg.csv')
+bg_emb = os.path.join(out_dir, 'ni_background_stats')
 vggish_model_path = k_frechet_audio_distance_dir / \
     Path('data/vggish_model.ckpt')
 
@@ -101,7 +101,7 @@ if __name__ == '__main__':
             create_file_list([Path(f) for f in Path(
                 epoch.path).iterdir()], Path(epoch_file_list))
             stats_output = os.path.join(
-                out_dir, 'emb_' + run.name + '_' + epoch.name + '.csv')
+                out_dir, 'emb_' + run.name + '_' + epoch.name )
             create_embeddings(Path(epoch_file_list),
                               stats_output=Path(stats_output),
                               input_sr=16000)
@@ -113,4 +113,4 @@ if __name__ == '__main__':
                 output.write(str(fad))
 
     with open('fad_dict.json', 'w') as fp:
-        json.dump(dict, fp)
+        json.dump(fad_dict, fp)

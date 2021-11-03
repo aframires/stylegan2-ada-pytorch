@@ -138,7 +138,7 @@ if __name__ == "__main__":
       os.makedirs(args.output)
 
     label = torch.zeros([1, G.c_dim], device=device) # assume no class label
-    noise_mode = "const" # default
+    noise_mode = "none" # default
     truncation_psi = args.truncation
 
     latents = []

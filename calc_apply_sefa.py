@@ -7,6 +7,7 @@ import numpy as np
 import os
 from tqdm import tqdm
 from training.training_loop import spec_to_audio
+import soundfile as sf
 
 
 def parse_args():
@@ -42,6 +43,7 @@ def parse_args():
                              '(default: %(default)s)')
     parser.add_argument('--seed', type=int, default=0,
                         help='Seed for sampling. (default: %(default)s)')
+
     return parser.parse_args()
 
 def parse_indices(obj, min_val=None, max_val=None):
@@ -104,7 +106,7 @@ def zs_to_ws(G,device,label,truncation_psi,zs):
         ws.append(w)
     return ws
 
-def factorize_weights(model,layer_idx,mode='T'):
+def factorize_weights(model,layer_idx):
 
     modulate = {
         k[0]: k[1]
@@ -121,59 +123,30 @@ def factorize_weights(model,layer_idx,mode='T'):
 
     idx = 0
 
-    if mode=='T':
-        weight_mat_T = []
-        for k, v in modulate.items():
-            if idx in layers:
-                tmp_w = v.T
-                weight_mat_T.append(tmp_w.cpu().detach().numpy())
-            idx=idx+1
-        weight = np.concatenate(weight_mat_T, axis=1).astype(np.float32)
-        weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
-        eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
 
-        torch.save({"ckpt": args.ckpt, "eigvec": eigen_vectors, "eigval": eigen_values}, "factorT.pt")
+    weight_mat_T = []
+    for k, v in modulate.items():
+        if idx in layers:
+            tmp_w = v.T
+            weight_mat_T.append(tmp_w.cpu().detach().numpy())
+        idx=idx+1
+    weight = np.concatenate(weight_mat_T, axis=1).astype(np.float32)
+    weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
+    eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
 
-    else:
-        weight_mat_nT = []
-        for k, v in modulate.items():
-            if idx in layers:
-                tmp_w = v.T
-                weight_mat_nT.append(tmp_w.cpu().detach().numpy())
-        weight = np.concatenate(weight_mat_nT, axis=1).astype(np.float32)
-        weight = weight / np.linalg.norm(weight, axis=0, keepdims=True)
-        eigen_values, eigen_vectors = np.linalg.eig(weight.dot(weight.T))
+    torch.save({"ckpt": args.ckpt, "eigvec": eigen_vectors, "eigval": eigen_values}, "factorT.pt")
 
-        torch.save({"ckpt": args.ckpt, "eigvec": eigen_vectors, "eigval": eigen_values}, "factorTn.pt")
 
     return layers, eigen_vectors.T, eigen_values
 
-def generate_audios(z, label, truncation_psi, noise_mode, direction, out_dir,file_name):
-    if(args.space == 'w'):
-        ws = zs_to_ws(G,torch.device('cuda'),label,truncation_psi,[z,z + direction,z - direction])
-        img1 = G.synthesis(ws[0], noise_mode=noise_mode, force_fp32=True)
-        img2 = G.synthesis(ws[1], noise_mode=noise_mode, force_fp32=True)
-        img3 = G.synthesis(ws[2], noise_mode=noise_mode, force_fp32=True)
-    else:
-        img1 = G(z, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
-        img2 = G(z + direction, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
-        img3 = G(z - direction, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
-
-    audio1 = spec_to_audio(img1[0].cpu().numpy())
-    sf.write(out_dir+file_name+"_.wav", audio1, 16000)
-
-    audio2 = spec_to_audio(img2[0].cpu().numpy())
-    sf.write(out_dir+file_name+"+.wav", audio2, 16000)
-
-    audio3 = spec_to_audio(img3[0].cpu().numpy())
-    sf.write(out_dir+file_name+"-.wav", audio3, 16000)
 
 if __name__ == "__main__":
 
     args = parse_args()
     G_kwargs = dnnlib.EasyDict()
     device = torch.device('cuda')
-
+    
+    save_dir = args.save_dir + '_trunc' + str(args.truncation) + '_layers' + args.layer_idx
     if not os.path.exists(args.save_dir):
       os.makedirs(args.save_dir)
 
@@ -203,15 +176,20 @@ if __name__ == "__main__":
     num_sem = args.num_semantics
 
     for sam_id in tqdm(range(num_sam), desc='Sample ', leave=False):
-        code = codes[sam_id:sam_id + 1]
+        code = codes[sam_id]
+        sample_folder = os.path.join(save_dir,'sample_'+str(sam_id))
+        if not os.path.exists(sample_folder):
+            os.makedirs(sample_folder)
         for sem_id in tqdm(range(num_sem), desc='Semantic ', leave=False):
             boundary = boundaries[sem_id:sem_id + 1]
-            for col_id, d in enumerate(distances, start=1):
-                temp_code = code.copy()
+            semantic_folder = os.path.join(sample_folder,'semantic_'+str(sem_id))
+            if not os.path.exists(semantic_folder):
+                os.makedirs(semantic_folder)           
+            for i,d in enumerate(distances, start=1):
+                temp_code = code.cpu()
                 temp_code[:, layers, :] += boundary * d
-#                image = generator.synthesis(to_tensor(temp_code))['image']
-#                image = postprocess(image)[0]
-#                vizer_1.set_cell(sem_id * (num_sam + 1) + sam_id + 1, col_id,
-#                                 image=image)
-#                vizer_2.set_cell(sam_id * (num_sem + 1) + sem_id + 1, col_id,
-#                                 image=image)
+                audio = G.synthesis(temp_code.cuda(), noise_mode=noise_mode, force_fp32=True)
+                audio = spec_to_audio(audio[0].cpu().numpy())
+                filename = os.path.join(semantic_folder, str(i) + '_' + str(d) + '.wav')
+                sf.write(filename, audio, 16000)
+

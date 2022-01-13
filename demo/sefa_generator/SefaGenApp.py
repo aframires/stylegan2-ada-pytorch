@@ -1,6 +1,8 @@
 import sys
 import torch
 import tempfile
+import dnnlib
+import legacy
 
 from PySide2.QtWidgets import QWidget, QPushButton, QVBoxLayout, QTextBrowser, QApplication
 from PySide2.QtCore import QThreadPool
@@ -28,6 +30,7 @@ k_window_width  = 150
 
 k_tmp_file_path = 'tmp.wav'
 
+k_latent_dimension = 256
 class KGApp(QWidget):
     def __init__(self):
         super(KGApp, self).__init__()
@@ -46,8 +49,10 @@ class KGApp(QWidget):
 
         self.model_file_path = self.choose_model_file_dialog.choose_open_file_path()
 
-        self.kick_drum_model = torch.load(native_path_string(self.model_file_path), map_location=torch.device('cpu'))
-        self.latent_dimension = get_model_latent_dim(self.kick_drum_model)
+        with dnnlib.util.open_url(self.model_file_path) as f:
+            self.kick_drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
+
+        self.latent_dimension = k_latent_dimension
 
         self.latent_vector = torch.zeros(1, self.latent_dimension, 1, device="cpu", requires_grad=False)
         self.pinned_latent_vector_1 = None

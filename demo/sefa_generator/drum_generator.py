@@ -1,6 +1,8 @@
 import torch
 from typing import List
 
+from training.training_loop import spec_to_audio
+
 from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 
 from utils.audio_file import AudioFile
@@ -9,14 +11,8 @@ class KGSignals(QObject):
     generation_finished = Signal(AudioFile)
     status_log = Signal(str)
 
-k_model_generator_key       = 'generator_smoothed'
-k_model_input_mapping_key   = 'input_mapping_smoothed'
-k_sample_rate_key           = 'sample_rate'
-k_latent_dim_key            = 'latent_dim'
-k_styleALAE_z_dim_key       = 'z_dim'
-k_model_name_key            = 'name'
-k_model_name_styleALAE      = 'StyleALAE'
-k_model_name_proGAN         = 'ProgressiveDCGAN'
+k_model_name                = 'StyleGAN2'
+k_sample_rate               = 44100 # TODO what sample rate is the model running at ?
 
 def apply_s_curve(input, amount = 1.0):
     from numpy import exp
@@ -42,34 +38,22 @@ def compute_fade_out(fade_out_samples, total_samples):
     fade_out = expand_dims(fade_out, 0)
     return fade_out
 
-def get_model_name(model: dict):
-    # to do: save model name explicitly in state dict
-    checkpoint_name = model[k_model_name_key].stem 
-    if k_model_name_styleALAE in checkpoint_name:
-        return k_model_name_styleALAE
-    elif k_model_name_proGAN in checkpoint_name:
-        return k_model_name_proGAN
-    else:
-        raise NotImplementedError()
-
-def get_model_latent_dim(model: dict):
-    if get_model_name(model) == k_model_name_styleALAE:
-        return model[k_styleALAE_z_dim_key]
-    else:
-        return model[k_latent_dim_key]
+def get_model_name():
+    return "StyleGAN2"
 
 class KGWorker(QRunnable):
     def __init__(self, saved_model: dict, latent_vector: torch.Tensor, fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
         super(KGWorker, self).__init__()
-        self.kick_generator = saved_model[k_model_generator_key].eval()
+
+        self.kick_generator = saved_model.eval()
         
-        self.model_name = get_model_name(saved_model)
+        self.model_name = get_model_name()
 
-        if self.model_name == k_model_name_styleALAE:
-            self.kick_input_mapping = saved_model[k_model_input_mapping_key].eval()
+        self.sample_rate = k_sample_rate 
+        self.latent_dimension = self.kick_generator.z_dim
 
-        self.sample_rate = int(saved_model[k_sample_rate_key].numpy())
         self.latent_vector = latent_vector
+
         self.signals = KGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None
         self.fade_out_ms = fade_out_ms if fade_out_ms > 0 else None
@@ -80,16 +64,7 @@ class KGWorker(QRunnable):
     def run(self):
         self.signals.status_log.emit('Generating Kick Sample')        
 
-        if self.model_name == k_model_name_styleALAE:
-            # hack, for now: InputMappingNetwork.forward() breaks with a batch size of 1 so we repeat the latent vector to get a batch size of 2
-            # TO DO: fix there instead
-            latent_vector = self.latent_vector.repeat(2,1,1)
-            output_audio_data = self.kick_generator(self.kick_input_mapping(latent_vector)).detach().numpy()
-        else:
-            output_audio_data = self.kick_generator(self.latent_vector).detach().numpy()
-
-        # drop batch dim
-        output_audio_data = output_audio_data[0,:,:]
+        output_audio_data = self.generate_audio()
 
         # apply fade-in
         if self.fade_in_ms is not None:
@@ -113,16 +88,36 @@ class KGWorker(QRunnable):
         self.signals.generation_finished.emit(output_audio_file)
 
 
+    def generate_audio(self, truncation_psi=1):
+        class_idx = None
+        noise_mode = 'const'
+
+        # Labels.
+        label = torch.zeros([1, self.kick_generator.c_dim], device='cpu')
+        if self.kick_generator.c_dim != 0:
+            if class_idx is None:
+                print('Must specify class label with --class when using a conditional network')
+            label[:, class_idx] = 1
+        else:
+            if class_idx is not None:
+                print ('warn: --class=lbl ignored when running on an unconditional network')
+
+        spectrogram = self.kick_generator(self.latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
+        return spec_to_audio(spectrogram[0].numpy())
+
+
 class KGBatchWorker(QRunnable):
     def __init__(self, saved_model: dict, latent_vectors: List[torch.Tensor], fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
         super(KGBatchWorker, self).__init__()
 
-        self.model_name = get_model_name(saved_model)
-        if self.model_name == k_model_name_styleALAE:
-            self.kick_input_mapping = saved_model[k_model_input_mapping_key].eval()
-        self.kick_generator = saved_model[k_model_generator_key].eval()
-        self.sample_rate = int(saved_model[k_sample_rate_key].numpy())
+        self.kick_generator = saved_model.eval()
+        self.model_name = get_model_name()
+
+        self.sample_rate = k_sample_rate 
+        self.latent_dimension = self.kick_generator.z_dim
+
         self.latent_vectors = latent_vectors
+
         self.signals = KGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None
         self.fade_out_ms = fade_out_ms if fade_out_ms > 0 else None
@@ -136,13 +131,7 @@ class KGBatchWorker(QRunnable):
 
             self.signals.status_log.emit(f'Generating Kick Sample {idx + 1}')
 
-            if self.model_name == k_model_name_styleALAE:
-                output_audio_data = self.kick_generator(self.kick_input_mapping(latent_vector)).detach().numpy()
-            else:
-                output_audio_data = self.kick_generator(latent_vector).detach().numpy()
-
-            # drop batch dim
-            output_audio_data = output_audio_data[0,:,:]
+            output_audio_data = self.generate_audio(latent_vector)
 
             # apply fade-in
             if self.fade_in_ms is not None:
@@ -165,3 +154,21 @@ class KGBatchWorker(QRunnable):
 
 
         self.signals.generation_finished.emit(output_audio_files)
+
+
+    def generate_audio(self, latent_vector, truncation_psi=1):
+        class_idx = None
+        noise_mode = 'const'
+
+        # Labels.
+        label = torch.zeros([1, self.kick_generator.c_dim], device='cpu')
+        if self.kick_generator.c_dim != 0:
+            if class_idx is None:
+                print('Must specify class label with --class when using a conditional network')
+            label[:, class_idx] = 1
+        else:
+            if class_idx is not None:
+                print ('warn: --class=lbl ignored when running on an unconditional network')
+
+        spectrogram = self.kick_generator(latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
+        return spec_to_audio(spectrogram[0].numpy())

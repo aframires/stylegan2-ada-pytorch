@@ -10,8 +10,8 @@ from PySide2.QtMultimedia import QSound
 
 from pathlib import Path
 
-from utils.audio_file import AudioFile, write_audio_file
-from utils.path_utils import native_path_string
+from demo.utils.audio_file import AudioFile, write_audio_file
+from demo.utils.path_utils import native_path_string
 
 from demo.gui_elements.file_dialog_widget import FileDialogWidget
 from demo.gui_elements.line_widget import HorLineWidget
@@ -21,7 +21,7 @@ from demo.gui_elements.canvas_widget import CanvasWidget
 from demo.sefa_generator.round_robin import RoundRobin
 from demo.sefa_generator.interpolator import Interpolator
 
-from demo.sefa_generator.drum_generator import KGWorker
+from demo.sefa_generator.drum_generator import DGWorker
 from demo.sefa_generator.drum_generator import get_model_latent_dim
 
 k_app_title     = 'Sefa Drum Generator'
@@ -31,9 +31,9 @@ k_window_width  = 150
 k_tmp_file_path = 'tmp.wav'
 
 k_latent_dimension = 256
-class KGApp(QWidget):
+class SGApp(QWidget):
     def __init__(self):
-        super(KGApp, self).__init__()
+        super(SGApp, self).__init__()
 
         self.choose_model_file_dialog   = FileDialogWidget  (title="Choose Model File",   
                                                             file_type_filter="PyTorch Model Archives (*.pt)", 
@@ -50,7 +50,7 @@ class KGApp(QWidget):
         self.model_file_path = self.choose_model_file_dialog.choose_open_file_path()
 
         with dnnlib.util.open_url(self.model_file_path) as f:
-            self.kick_drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
+            self.drum_drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
 
         self.latent_dimension = k_latent_dimension
 
@@ -78,19 +78,19 @@ class KGApp(QWidget):
         self.latent_space_canvas.paint_data(self.latent_vector)
 
         self.button_generate_sample = QPushButton('Generate Drum Sample')
-        self.button_generate_sample.clicked.connect(self.__on_generate_kick)
+        self.button_generate_sample.clicked.connect(self.__on_generate_drum)
         self.layout.addWidget(self.button_generate_sample)
 
         self.layout.addWidget(HorLineWidget())
 
         self.button_generate_random_sample = QPushButton('Generate Random Drum Sample')
-        self.button_generate_random_sample.clicked.connect(self.__on_generate_random_kick)
+        self.button_generate_random_sample.clicked.connect(self.__on_generate_random_drum)
         self.layout.addWidget(self.button_generate_random_sample)
 
         self.layout.addWidget(HorLineWidget())
 
         self.button_playback = QPushButton('Play Sample!')
-        self.button_playback.clicked.connect(self.__on_play_generated_kick)
+        self.button_playback.clicked.connect(self.__on_play_generated_drum)
         self.layout.addWidget(self.button_playback)
 
         # requires a generated audio file
@@ -183,7 +183,7 @@ class KGApp(QWidget):
 
     def __on_generate_interpolated_samples(self):
         self.interpolate_path_reference = self.interpolate_path_dialog.choose_save_file_path()
-        interpolation_generator = Interpolator(self.kick_drum_model, 
+        interpolation_generator = Interpolator(self.drum_drum_model, 
                                                 self.interpolate_path_reference, 
                                                 self.pinned_latent_vector_1, 
                                                 self.pinned_latent_vector_2,
@@ -198,7 +198,7 @@ class KGApp(QWidget):
 
     def __on_generate_round_robin(self):
         self.round_robin_reference_path = self.round_robin_path_dialog.choose_save_file_path()
-        round_robin_generator = RoundRobin(self.kick_drum_model,
+        round_robin_generator = RoundRobin(self.drum_drum_model,
                                             self.latent_vector, 
                                             self.round_robin_reference_path, 
                                             num_round_robin=self.num_round_robin_slider.get_slider_value(),
@@ -217,12 +217,12 @@ class KGApp(QWidget):
         self.latent_space_canvas.paint_data(self.latent_vector)
 
 
-    def __on_generate_random_kick(self):
+    def __on_generate_random_drum(self):
         self.__generate_rand_latent_vector()
-        self.__on_generate_kick()
+        self.__on_generate_drum()
 
 
-    def __on_generate_kick(self):
+    def __on_generate_drum(self):
         self.text_box.clear()
         self.button_generate_random_sample.setDisabled(True)
         self.button_generate_sample.setDisabled(True)
@@ -231,24 +231,24 @@ class KGApp(QWidget):
         fade_out_ms = self.fade_out_slider.get_slider_value()
         offset_ms = self.offset_slider.get_slider_value()
 
-        kick_generator = KGWorker(  saved_model=self.kick_drum_model, 
+        drum_generator = DGWorker(  saved_model=self.drum_drum_model, 
                                     latent_vector=self.latent_vector, 
                                     fade_in_ms=fade_in_ms, 
                                     fade_out_ms=fade_out_ms,
                                     offset_ms=offset_ms)
-        kick_generator.signals.generation_finished.connect(self.__on_generation_finished)
-        kick_generator.signals.status_log.connect(self.__log_status)
+        drum_generator.signals.generation_finished.connect(self.__on_generation_finished)
+        drum_generator.signals.status_log.connect(self.__log_status)
 
-        self.threadpool.start(kick_generator)
+        self.threadpool.start(drum_generator)
 
 
-    def __on_play_generated_kick(self):
+    def __on_play_generated_drum(self):
         write_audio_file(self.tmp_file_path, self.generated_audio_file)
         QSound.play(native_path_string(self.tmp_file_path))
 
 
     def __on_generation_finished(self, audio_file:AudioFile):
-        self.__log_status('Kick Generated')
+        self.__log_status('Drum Generated')
 
         self.generated_audio_file = audio_file
 
@@ -257,7 +257,7 @@ class KGApp(QWidget):
         self.button_save_to_disk.setDisabled(False)
         self.button_playback.setDisabled(False)
 
-        self.__on_play_generated_kick()
+        self.__on_play_generated_drum()
 
 
     def __on_save_generated_sample(self):
@@ -272,6 +272,6 @@ class KGApp(QWidget):
 
 def run():
     app = QApplication([])
-    kgApp = KGApp()
+    kgApp = SGApp()
     kgApp.draw_window()
     sys.exit(app.exec_())

@@ -7,7 +7,7 @@ from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 
 from utils.audio_file import AudioFile
 
-class KGSignals(QObject):
+class DGSignals(QObject):
     generation_finished = Signal(AudioFile)
     status_log = Signal(str)
 
@@ -41,9 +41,9 @@ def compute_fade_out(fade_out_samples, total_samples):
 def get_model_name():
     return "StyleGAN2"
 
-class KGWorker(QRunnable):
+class DGWorker(QRunnable):
     def __init__(self, saved_model: dict, latent_vector: torch.Tensor, fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
-        super(KGWorker, self).__init__()
+        super(DGWorker, self).__init__()
 
         self.kick_generator = saved_model.eval()
         
@@ -54,7 +54,7 @@ class KGWorker(QRunnable):
 
         self.latent_vector = latent_vector
 
-        self.signals = KGSignals()
+        self.signals = DGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None
         self.fade_out_ms = fade_out_ms if fade_out_ms > 0 else None
         self.offset_ms = offset_ms if offset_ms > 0 else None
@@ -106,9 +106,9 @@ class KGWorker(QRunnable):
         return spec_to_audio(spectrogram[0].numpy())
 
 
-class KGBatchWorker(QRunnable):
+class DGBatchWorker(QRunnable):
     def __init__(self, saved_model: dict, latent_vectors: List[torch.Tensor], fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
-        super(KGBatchWorker, self).__init__()
+        super(DGBatchWorker, self).__init__()
 
         self.kick_generator = saved_model.eval()
         self.model_name = get_model_name()
@@ -118,7 +118,7 @@ class KGBatchWorker(QRunnable):
 
         self.latent_vectors = latent_vectors
 
-        self.signals = KGSignals()
+        self.signals = DGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None
         self.fade_out_ms = fade_out_ms if fade_out_ms > 0 else None
         self.offset_ms = offset_ms if offset_ms > 0 else None

@@ -5,7 +5,7 @@ import soundfile    as audio_writer
 
 from pathlib import Path
 
-from utils.path_utils import native_path_string
+from demo.utils.path_utils import native_path_string
 
 AudioFile = collections.namedtuple('AudioFile', 'audio_data sample_rate num_channels num_frames')
 

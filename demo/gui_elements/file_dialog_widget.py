@@ -1,7 +1,7 @@
 from pathlib import Path
 from PySide2.QtWidgets import QWidget, QFileDialog
 
-from utils.path_utils import native_path_string
+from demo.utils.path_utils import native_path_string
 
 class FileDialogWidget(QWidget):
     def __init__(self, title: str, file_type_filter: str=None, default_filter: str=None):

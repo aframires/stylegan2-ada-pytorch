@@ -4,8 +4,8 @@ from typing import List
 
 from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 
-from utils.audio_file import AudioFile, write_audio_file
-from utils.path_utils import native_path_string
+from demo.utils.audio_file import AudioFile, write_audio_file
+from demo.utils.path_utils import native_path_string
 
 from demo.sefa_generator.drum_generator import KGBatchWorker
 

@@ -5,7 +5,7 @@ from training.training_loop import spec_to_audio
 
 from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 
-from utils.audio_file import AudioFile
+from demo.utils.audio_file import AudioFile
 
 class DGSignals(QObject):
     generation_finished = Signal(AudioFile)

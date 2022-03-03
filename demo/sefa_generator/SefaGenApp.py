@@ -22,7 +22,7 @@ from demo.sefa_generator.round_robin import RoundRobin
 from demo.sefa_generator.interpolator import Interpolator
 
 from demo.sefa_generator.drum_generator import DGWorker
-from demo.sefa_generator.drum_generator import get_model_latent_dim
+# from demo.sefa_generator.drum_generator import get_model_latent_dim
 
 k_app_title     = 'Sefa Drum Generator'
 k_window_height = 400

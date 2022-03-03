@@ -7,7 +7,7 @@ from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 from demo.utils.audio_file import AudioFile, write_audio_file
 from demo.utils.path_utils import native_path_string
 
-from demo.sefa_generator.drum_generator import KGBatchWorker
+from demo.sefa_generator.drum_generator import DGBatchWorker
 
 k_variation_eps = 1e-2
 
@@ -41,7 +41,7 @@ class RoundRobin(QRunnable):
 
         latent_vectors = self.__synthesize_round_robin()
 
-        self.kick_generator = KGBatchWorker(self.saved_model, latent_vectors, self.fade_in_ms, self.fade_out_ms)
+        self.kick_generator = DGBatchWorker(self.saved_model, latent_vectors, self.fade_in_ms, self.fade_out_ms)
         self.kick_generator.signals.generation_finished.connect(self.__on_generation_finished)
         self.kick_generator.signals.status_log.connect(self.__log_status)
 

@@ -3,6 +3,7 @@ import torch
 import tempfile
 import dnnlib
 import legacy
+import functools
 
 from PySide2.QtWidgets import QWidget, QPushButton, QVBoxLayout, QTextBrowser, QApplication
 from PySide2.QtCore import QThreadPool
@@ -22,7 +23,6 @@ from demo.sefa_generator.round_robin import RoundRobin
 from demo.sefa_generator.interpolator import Interpolator
 
 from demo.sefa_generator.drum_generator import DGWorker
-# from demo.sefa_generator.drum_generator import get_model_latent_dim
 
 k_app_title     = 'Sefa Drum Generator'
 k_window_height = 400
@@ -30,7 +30,7 @@ k_window_width  = 150
 
 k_tmp_file_path = 'tmp.wav'
 
-k_latent_dimension = 256
+k_latent_dimension = 512
 class SGApp(QWidget):
     def __init__(self):
         super(SGApp, self).__init__()
@@ -49,8 +49,11 @@ class SGApp(QWidget):
 
         self.model_file_path = self.choose_model_file_dialog.choose_open_file_path()
 
-        with dnnlib.util.open_url(self.model_file_path) as f:
+        with dnnlib.util.open_url(str(self.model_file_path)) as f:
             self.drum_drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
+
+        self.drum_drum_model = self.drum_drum_model.float()
+        self.drum_drum_model.forward = functools.partial(self.drum_drum_model.forward, force_fp32=True)
 
         self.latent_dimension = k_latent_dimension
 

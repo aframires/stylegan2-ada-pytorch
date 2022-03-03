@@ -14,6 +14,12 @@ class DGSignals(QObject):
 k_model_name                = 'StyleGAN2'
 k_sample_rate               = 44100 # TODO what sample rate is the model running at ?
 
+
+def format_dim_for_channels(audio_data):
+    if len(audio_data.shape) == 1:
+        from numpy import expand_dims
+        return expand_dims(audio_data, 0)
+
 def apply_s_curve(input, amount = 1.0):
     from numpy import exp
     def sigmoid(x):
@@ -52,7 +58,7 @@ class DGWorker(QRunnable):
         self.sample_rate = k_sample_rate 
         self.latent_dimension = self.kick_generator.z_dim
 
-        self.latent_vector = latent_vector
+        self.latent_vector = latent_vector.squeeze(2)
 
         self.signals = DGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None
@@ -64,7 +70,9 @@ class DGWorker(QRunnable):
     def run(self):
         self.signals.status_log.emit('Generating Kick Sample')        
 
-        output_audio_data = self.generate_audio()
+        output_audio_data = format_dim_for_channels(self.generate_audio())
+
+        print(output_audio_data.shape)
 
         # apply fade-in
         if self.fade_in_ms is not None:
@@ -102,6 +110,8 @@ class DGWorker(QRunnable):
             if class_idx is not None:
                 print ('warn: --class=lbl ignored when running on an unconditional network')
 
+        print(self.latent_vector.shape)
+
         spectrogram = self.kick_generator(self.latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
         return spec_to_audio(spectrogram[0].numpy())
 
@@ -131,7 +141,7 @@ class DGBatchWorker(QRunnable):
 
             self.signals.status_log.emit(f'Generating Kick Sample {idx + 1}')
 
-            output_audio_data = self.generate_audio(latent_vector)
+            output_audio_data = format_dim_for_channels(self.generate_audio(latent_vector))
 
             # apply fade-in
             if self.fade_in_ms is not None:

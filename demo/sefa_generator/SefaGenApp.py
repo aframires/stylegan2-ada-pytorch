@@ -1,6 +1,7 @@
 import sys
 import torch
 import tempfile
+from demo.sefa_generator.latent_transformer import LatentTransformer
 import dnnlib
 import legacy
 import functools
@@ -30,14 +31,20 @@ k_window_width  = 150
 
 k_tmp_file_path = 'tmp.wav'
 
-k_latent_dimension = 512
+k_num_transform_weights = 10
+
 class SGApp(QWidget):
     def __init__(self):
         super(SGApp, self).__init__()
 
         self.choose_model_file_dialog   = FileDialogWidget  (title="Choose Model File",   
-                                                            file_type_filter="PyTorch Model Archives (*.pt)", 
-                                                            default_filter = "PyTorch Model Archives (*.pt)")
+                                                            file_type_filter="Pickel Files (*.pkl)", 
+                                                            default_filter = "Pickel Files (*.pkl)")
+
+        self.choose_factorization_file_dialog = FileDialogWidget  (title="Choose Model File",   
+                                                            file_type_filter="PyTorch File Format (*.pt)", 
+                                                            default_filter = "PyTorch File Format (*.pt)")
+
         self.save_file_dialog           = FileDialogWidget( title="Save Output File",    
                                                             file_type_filter="Wav Files (*.wav)")
 
@@ -48,16 +55,20 @@ class SGApp(QWidget):
                                                             file_type_filter="Wav Files (*.wav)")
 
         self.model_file_path = self.choose_model_file_dialog.choose_open_file_path()
-
         with dnnlib.util.open_url(str(self.model_file_path)) as f:
-            self.drum_drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
+            self.drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
+        self.drum_model = self.drum_model.float()
+        self.drum_model.forward = functools.partial(self.drum_model.forward, force_fp32=True)
 
-        self.drum_drum_model = self.drum_drum_model.float()
-        self.drum_drum_model.forward = functools.partial(self.drum_drum_model.forward, force_fp32=True)
+        self.factorisation_file_path = self.choose_factorization_file_dialog.choose_open_file_path()
+        self.latent_transformer = LatentTransformer(self.factorisation_file_path)
+        self.latent_transformation_weights = torch.zeros(k_num_transform_weights, device="cpu", requires_grad=False)
 
-        self.latent_dimension = k_latent_dimension
+        self.latent_dimension = self.drum_model.z_dim
 
         self.latent_vector = torch.zeros(1, self.latent_dimension, 1, device="cpu", requires_grad=False)
+        self.latent_vector_trans = torch.zeros(1, self.latent_dimension, 1, device="cpu", requires_grad=False)
+
         self.pinned_latent_vector_1 = None
         self.pinned_latent_vector_2 = None
 
@@ -121,35 +132,47 @@ class SGApp(QWidget):
         
         self.layout.addWidget(HorLineWidget())
 
-        self.num_round_robin_slider = SliderWidget('Num Round Robin', 15, 2, 1, 10)
-        self.layout.addWidget(self.num_round_robin_slider.get_slider_label_widget())
-        self.layout.addWidget(self.num_round_robin_slider.get_slider_widget())
+        self.latent_transform_dim_slider = SliderWidget('Latent Transform Dim', k_num_transform_weights, 0, 1, 0)
+        self.layout.addWidget(self.latent_transform_dim_slider.get_slider_label_widget())
+        self.layout.addWidget(self.latent_transform_dim_slider.get_slider_widget())
 
-        self.variation_round_robin_slider = SliderWidget('Round Robin Spread', 10, 1, 1, 2)
-        self.layout.addWidget(self.variation_round_robin_slider.get_slider_label_widget())
-        self.layout.addWidget(self.variation_round_robin_slider.get_slider_widget())
+        self.latent_transform_val_slider = SliderWidget('Latent Transform Value at Index', 1, -1, 0.01, 0)
+        self.layout.addWidget(self.latent_transform_val_slider.get_slider_label_widget())
+        self.layout.addWidget(self.latent_transform_val_slider.get_slider_widget())
 
-        self.button_round_robin = QPushButton('Generate Round Robin')
-        self.button_round_robin.clicked.connect(self.__on_generate_round_robin)
-        self.layout.addWidget(self.button_round_robin)
+        self.button_set_latent_trans_dim = QPushButton('Set Value for Latent Dim')
+        self.button_set_latent_trans_dim.clicked.connect(self.__on_set_latent_transformation_dim)
+        self.layout.addWidget(self.button_set_latent_trans_dim)
 
-        self.layout.addWidget(HorLineWidget())
+        # self.num_round_robin_slider = SliderWidget('Num Round Robin', 15, 2, 1, 10)
+        # self.layout.addWidget(self.num_round_robin_slider.get_slider_label_widget())
+        # self.layout.addWidget(self.num_round_robin_slider.get_slider_widget())
 
-        self.button_pin_latent_1 = QPushButton('Pin Sample 1')
-        self.button_pin_latent_1.clicked.connect(self.__on_pin_latent_1)
-        self.layout.addWidget(self.button_pin_latent_1)
-        self.button_pin_latent_2 = QPushButton('Pin Sample 2')
-        self.button_pin_latent_2.clicked.connect(self.__on_pin_latent_2)
-        self.layout.addWidget(self.button_pin_latent_2)
+        # self.variation_round_robin_slider = SliderWidget('Round Robin Spread', 10, 1, 1, 2)
+        # self.layout.addWidget(self.variation_round_robin_slider.get_slider_label_widget())
+        # self.layout.addWidget(self.variation_round_robin_slider.get_slider_widget())
 
-        self.num_interpolation_steps_slider = SliderWidget('Num Interpolation Steps', 15, 2, 1, 10)
-        self.layout.addWidget(self.num_interpolation_steps_slider.get_slider_label_widget())
-        self.layout.addWidget(self.num_interpolation_steps_slider.get_slider_widget())
+        # self.button_round_robin = QPushButton('Generate Round Robin')
+        # self.button_round_robin.clicked.connect(self.__on_generate_round_robin)
+        # self.layout.addWidget(self.button_round_robin)
 
-        self.button_interpolation = QPushButton('Generate Sample Interpolation')
-        self.button_interpolation.clicked.connect(self.__on_generate_interpolated_samples)
-        self.layout.addWidget(self.button_interpolation)
-        self.button_interpolation.setDisabled(True)
+        # self.layout.addWidget(HorLineWidget())
+
+        # self.button_pin_latent_1 = QPushButton('Pin Sample 1')
+        # self.button_pin_latent_1.clicked.connect(self.__on_pin_latent_1)
+        # self.layout.addWidget(self.button_pin_latent_1)
+        # self.button_pin_latent_2 = QPushButton('Pin Sample 2')
+        # self.button_pin_latent_2.clicked.connect(self.__on_pin_latent_2)
+        # self.layout.addWidget(self.button_pin_latent_2)
+
+        # self.num_interpolation_steps_slider = SliderWidget('Num Interpolation Steps', 15, 2, 1, 10)
+        # self.layout.addWidget(self.num_interpolation_steps_slider.get_slider_label_widget())
+        # self.layout.addWidget(self.num_interpolation_steps_slider.get_slider_widget())
+
+        # self.button_interpolation = QPushButton('Generate Sample Interpolation')
+        # self.button_interpolation.clicked.connect(self.__on_generate_interpolated_samples)
+        # self.layout.addWidget(self.button_interpolation)
+        # self.button_interpolation.setDisabled(True)
 
         self.text_box = QTextBrowser()
         self.layout.addWidget(self.text_box)
@@ -160,9 +183,18 @@ class SGApp(QWidget):
         self.window.show()
 
 
+    def update_latent_transformation_vector(self):
+        index = self.latent_transform_dim_slider.get_slider_value()
+        value = self.latent_transform_val_slider.get_slider_value()
+        self.latent_transformation_weights[index] = value
+        self.apply_latent_transformation()
+
     def update_latent_vector(self, idx, value):
         self.latent_vector[0, idx, 0] = value
+        self.apply_latent_transformation()
 
+    def apply_latent_transformation(self):
+        self.latent_vector_trans = self.latent_transformer.transform(self.latent_vector, self.latent_transformation_weights)
 
     def sync_canvas(self):
         self.latent_space_canvas.clear()
@@ -186,7 +218,7 @@ class SGApp(QWidget):
 
     def __on_generate_interpolated_samples(self):
         self.interpolate_path_reference = self.interpolate_path_dialog.choose_save_file_path()
-        interpolation_generator = Interpolator(self.drum_drum_model, 
+        interpolation_generator = Interpolator(self.drum_model, 
                                                 self.interpolate_path_reference, 
                                                 self.pinned_latent_vector_1, 
                                                 self.pinned_latent_vector_2,
@@ -201,7 +233,7 @@ class SGApp(QWidget):
 
     def __on_generate_round_robin(self):
         self.round_robin_reference_path = self.round_robin_path_dialog.choose_save_file_path()
-        round_robin_generator = RoundRobin(self.drum_drum_model,
+        round_robin_generator = RoundRobin(self.drum_model,
                                             self.latent_vector, 
                                             self.round_robin_reference_path, 
                                             num_round_robin=self.num_round_robin_slider.get_slider_value(),
@@ -234,7 +266,7 @@ class SGApp(QWidget):
         fade_out_ms = self.fade_out_slider.get_slider_value()
         offset_ms = self.offset_slider.get_slider_value()
 
-        drum_generator = DGWorker(  saved_model=self.drum_drum_model, 
+        drum_generator = DGWorker(  saved_model=self.drum_model, 
                                     latent_vector=self.latent_vector, 
                                     fade_in_ms=fade_in_ms, 
                                     fade_out_ms=fade_out_ms,

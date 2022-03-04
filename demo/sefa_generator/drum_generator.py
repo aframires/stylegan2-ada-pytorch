@@ -51,12 +51,12 @@ class DGWorker(QRunnable):
     def __init__(self, saved_model: dict, latent_vector: torch.Tensor, fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
         super(DGWorker, self).__init__()
 
-        self.kick_generator = saved_model.eval()
+        self.drum_generator = saved_model.eval()
         
         self.model_name = get_model_name()
 
         self.sample_rate = k_sample_rate 
-        self.latent_dimension = self.kick_generator.z_dim
+        self.latent_dimension = self.drum_generator.z_dim
 
         self.latent_vector = latent_vector.squeeze(2)
 
@@ -71,8 +71,6 @@ class DGWorker(QRunnable):
         self.signals.status_log.emit('Generating Kick Sample')        
 
         output_audio_data = format_dim_for_channels(self.generate_audio())
-
-        print(output_audio_data.shape)
 
         # apply fade-in
         if self.fade_in_ms is not None:
@@ -101,8 +99,8 @@ class DGWorker(QRunnable):
         noise_mode = 'const'
 
         # Labels.
-        label = torch.zeros([1, self.kick_generator.c_dim], device='cpu')
-        if self.kick_generator.c_dim != 0:
+        label = torch.zeros([1, self.drum_generator.c_dim], device='cpu')
+        if self.drum_generator.c_dim != 0:
             if class_idx is None:
                 print('Must specify class label with --class when using a conditional network')
             label[:, class_idx] = 1
@@ -110,9 +108,7 @@ class DGWorker(QRunnable):
             if class_idx is not None:
                 print ('warn: --class=lbl ignored when running on an unconditional network')
 
-        print(self.latent_vector.shape)
-
-        spectrogram = self.kick_generator(self.latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
+        spectrogram = self.drum_generator(self.latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
         return spec_to_audio(spectrogram[0].numpy())
 
 
@@ -120,11 +116,11 @@ class DGBatchWorker(QRunnable):
     def __init__(self, saved_model: dict, latent_vectors: List[torch.Tensor], fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
         super(DGBatchWorker, self).__init__()
 
-        self.kick_generator = saved_model.eval()
+        self.drum_generator = saved_model.eval()
         self.model_name = get_model_name()
 
         self.sample_rate = k_sample_rate 
-        self.latent_dimension = self.kick_generator.z_dim
+        self.latent_dimension = self.drum_generator.z_dim
 
         self.latent_vectors = latent_vectors
 
@@ -171,8 +167,8 @@ class DGBatchWorker(QRunnable):
         noise_mode = 'const'
 
         # Labels.
-        label = torch.zeros([1, self.kick_generator.c_dim], device='cpu')
-        if self.kick_generator.c_dim != 0:
+        label = torch.zeros([1, self.drum_generator.c_dim], device='cpu')
+        if self.drum_generator.c_dim != 0:
             if class_idx is None:
                 print('Must specify class label with --class when using a conditional network')
             label[:, class_idx] = 1
@@ -180,5 +176,5 @@ class DGBatchWorker(QRunnable):
             if class_idx is not None:
                 print ('warn: --class=lbl ignored when running on an unconditional network')
 
-        spectrogram = self.kick_generator(latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
+        spectrogram = self.drum_generator(latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
         return spec_to_audio(spectrogram[0].numpy())

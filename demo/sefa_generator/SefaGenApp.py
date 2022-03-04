@@ -31,7 +31,7 @@ k_window_width  = 150
 
 k_tmp_file_path = 'tmp.wav'
 
-k_num_transform_weights = 10
+k_num_transform_weights = 4
 
 class SGApp(QWidget):
     def __init__(self):
@@ -66,8 +66,8 @@ class SGApp(QWidget):
 
         self.latent_dimension = self.drum_model.z_dim
 
-        self.latent_vector = torch.zeros(1, self.latent_dimension, 1, device="cpu", requires_grad=False)
-        self.latent_vector_trans = torch.zeros(1, self.latent_dimension, 1, device="cpu", requires_grad=False)
+        self.latent_vector = torch.zeros(1, self.latent_dimension, device="cpu", requires_grad=False)
+        self.latent_vector_trans = torch.zeros(1, self.latent_dimension, device="cpu", requires_grad=False)
 
         self.pinned_latent_vector_1 = None
         self.pinned_latent_vector_2 = None
@@ -132,17 +132,11 @@ class SGApp(QWidget):
         
         self.layout.addWidget(HorLineWidget())
 
-        self.latent_transform_dim_slider = SliderWidget('Latent Transform Dim', k_num_transform_weights, 0, 1, 0)
-        self.layout.addWidget(self.latent_transform_dim_slider.get_slider_label_widget())
-        self.layout.addWidget(self.latent_transform_dim_slider.get_slider_widget())
-
-        self.latent_transform_val_slider = SliderWidget('Latent Transform Value at Index', 1, -1, 0.01, 0)
-        self.layout.addWidget(self.latent_transform_val_slider.get_slider_label_widget())
-        self.layout.addWidget(self.latent_transform_val_slider.get_slider_widget())
-
-        self.button_set_latent_trans_dim = QPushButton('Set Value for Latent Dim')
-        self.button_set_latent_trans_dim.clicked.connect(self.__on_set_latent_transformation_dim)
-        self.layout.addWidget(self.button_set_latent_trans_dim)
+        self.latent_transform_val_sliders = []
+        for transform_weight_idx in range(k_num_transform_weights):
+            self.latent_transform_val_sliders.append(SliderWidget(f'{transform_weight_idx}', 1, -1, 0.01, 0, vertical=False, position_idx=transform_weight_idx))
+            self.layout.addWidget(self.latent_transform_val_sliders[transform_weight_idx].get_slider_label_widget())
+            self.layout.addWidget(self.latent_transform_val_sliders[transform_weight_idx].get_slider_widget())
 
         # self.num_round_robin_slider = SliderWidget('Num Round Robin', 15, 2, 1, 10)
         # self.layout.addWidget(self.num_round_robin_slider.get_slider_label_widget())
@@ -183,18 +177,19 @@ class SGApp(QWidget):
         self.window.show()
 
 
-    def update_latent_transformation_vector(self):
-        index = self.latent_transform_dim_slider.get_slider_value()
-        value = self.latent_transform_val_slider.get_slider_value()
-        self.latent_transformation_weights[index] = value
-        self.apply_latent_transformation()
+    def update_latent_transformation_weights(self):
+        for weight_idx, slider in enumerate(self.latent_transform_val_sliders):
+            self.latent_transformation_weights[weight_idx] = slider.get_slider_value()
+
 
     def update_latent_vector(self, idx, value):
-        self.latent_vector[0, idx, 0] = value
-        self.apply_latent_transformation()
+        self.latent_vector[0, idx] = value
+
 
     def apply_latent_transformation(self):
+        self.update_latent_transformation_weights()
         self.latent_vector_trans = self.latent_transformer.transform(self.latent_vector, self.latent_transformation_weights)
+
 
     def sync_canvas(self):
         self.latent_space_canvas.clear()
@@ -247,7 +242,7 @@ class SGApp(QWidget):
 
 
     def __generate_rand_latent_vector(self):
-        self.latent_vector = torch.randn(1, self.latent_dimension, 1, device="cpu")
+        self.latent_vector = torch.randn(1, self.latent_dimension, device="cpu")
         self.latent_space_canvas.clear()
         self.latent_space_canvas.paint_data(self.latent_vector)
 
@@ -266,8 +261,10 @@ class SGApp(QWidget):
         fade_out_ms = self.fade_out_slider.get_slider_value()
         offset_ms = self.offset_slider.get_slider_value()
 
+        self.apply_latent_transformation()
+
         drum_generator = DGWorker(  saved_model=self.drum_model, 
-                                    latent_vector=self.latent_vector, 
+                                    latent_vector=self.latent_vector_trans, 
                                     fade_in_ms=fade_in_ms, 
                                     fade_out_ms=fade_out_ms,
                                     offset_ms=offset_ms)

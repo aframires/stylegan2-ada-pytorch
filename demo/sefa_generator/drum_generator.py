@@ -58,7 +58,7 @@ class DGWorker(QRunnable):
         self.sample_rate = k_sample_rate 
         self.latent_dimension = self.drum_generator.z_dim
 
-        self.latent_vector = latent_vector.squeeze(2)
+        self.latent_vector = latent_vector
 
         self.signals = DGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None

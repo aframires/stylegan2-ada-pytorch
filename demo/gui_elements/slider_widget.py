@@ -7,7 +7,9 @@ class SliderWidget(QWidget):
                     max_value: int, 
                     min_value: int, 
                     step_size: int, 
-                    init_value: int=None, 
+                    init_value: int=None,
+                    vertical: bool=False,
+                    position_idx: int=None,
                     parent=None):
         super(SliderWidget, self).__init__(parent)
 
@@ -19,6 +21,7 @@ class SliderWidget(QWidget):
         self.max_value = max_value
         self.min_value = min_value
         self.step_size = step_size
+        self.position_idx = position_idx
 
         self.init_value = init_value
         if init_value is None:
@@ -27,12 +30,12 @@ class SliderWidget(QWidget):
         self.label_widget = QLabel(self.title + ': ' + str(init_value))
         self.label_widget.setAlignment(Qt.AlignCenter)
 
-        self.slider_widget = QSlider(Qt.Horizontal)
+        self.slider_widget = QSlider(Qt.Vertical) if vertical else QSlider(Qt.Horizontal)
         self.slider_widget.setMinimum(int(self.min_value//self.step_size))
         self.slider_widget.setMaximum(int(self.max_value//self.step_size))
 
         self.slider_widget.setValue(int(self.init_value/self.step_size))
-        self.slider_widget.setTickPosition(QSlider.TicksBelow)
+        self.slider_widget.setTickPosition(QSlider.TicksLeft) if vertical else self.slider_widget.setTickPosition(QSlider.TicksBelow)
         self.slider_widget.setTickInterval(self.step_size)
     
         self.slider_widget.valueChanged.connect(self.set_slider_value_text)
@@ -53,4 +56,8 @@ class SliderWidget(QWidget):
 
     def get_slider_value(self):
         return self.step_size * self.slider_widget.value()
+
+    
+    def get_position_idx(self):
+        return self.position_idx
 

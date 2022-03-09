@@ -1,7 +1,7 @@
 import sys
 import torch
 import tempfile
-from demo.sefa_generator.latent_transformer import LatentTransformer
+from demo.generator.latent_transformer import LatentTransformer, TransformerClass
 import dnnlib
 import legacy
 import functools
@@ -20,12 +20,12 @@ from demo.gui_elements.line_widget import HorLineWidget
 from demo.gui_elements.slider_widget import SliderWidget
 from demo.gui_elements.canvas_widget import CanvasWidget
 
-from demo.sefa_generator.round_robin import RoundRobin
-from demo.sefa_generator.interpolator import Interpolator
+from demo.generator.round_robin import RoundRobin
+from demo.generator.interpolator import Interpolator
 
-from demo.sefa_generator.drum_generator import DGWorker
+from demo.generator.drum_generator import DGWorker
 
-k_app_title     = 'Sefa Drum Generator'
+k_app_title     = 'Drum Generator'
 k_window_height = 400
 k_window_width  = 150
 
@@ -33,15 +33,24 @@ k_tmp_file_path = 'tmp.wav'
 
 k_num_transform_weights = 4
 
-class SGApp(QWidget):
+class BGApp(QWidget):
     def __init__(self):
-        super(SGApp, self).__init__()
+        super(BGApp, self).__init__()
+
+        self.sefa_fact_file = None
+        self.button_sefa = None
+        self.interface_fact_file = None
+        self.button_interface = None
 
         self.choose_model_file_dialog   = FileDialogWidget  (title="Choose Model File",   
                                                             file_type_filter="Pickel Files (*.pkl)", 
                                                             default_filter = "Pickel Files (*.pkl)")
 
-        self.choose_factorization_file_dialog = FileDialogWidget  (title="Choose Model File",   
+        self.choose_sefa_factorization_file_dialog = FileDialogWidget  (title="Choose Model File",   
+                                                            file_type_filter="PyTorch File Format (*.pt)", 
+                                                            default_filter = "PyTorch File Format (*.pt)")
+
+        self.choose_interface_factorization_file_dialog = FileDialogWidget  (title="Choose Model File",   
                                                             file_type_filter="PyTorch File Format (*.pt)", 
                                                             default_filter = "PyTorch File Format (*.pt)")
 
@@ -57,17 +66,13 @@ class SGApp(QWidget):
         self.model_file_path = self.choose_model_file_dialog.choose_open_file_path()
         with dnnlib.util.open_url(str(self.model_file_path)) as f:
             self.drum_model = legacy.load_network_pkl(f)['G_ema'].to('cpu')
-        self.drum_model = self.drum_model.float()
-        self.drum_model.forward = functools.partial(self.drum_model.forward, force_fp32=True)
+        self.drum_model = self.drum_model.float().eval()
+                
+        self.__select_factorisation()
 
-        self.factorisation_file_path = self.choose_factorization_file_dialog.choose_open_file_path()
-        self.latent_transformer = LatentTransformer(self.factorisation_file_path)
         self.latent_transformation_weights = torch.zeros(k_num_transform_weights, device="cpu", requires_grad=False)
-
         self.latent_dimension = self.drum_model.z_dim
-
         self.latent_vector = torch.zeros(1, self.latent_dimension, device="cpu", requires_grad=False)
-        self.latent_vector_trans = torch.zeros(1, self.latent_dimension, device="cpu", requires_grad=False)
 
         self.pinned_latent_vector_1 = None
         self.pinned_latent_vector_2 = None
@@ -83,6 +88,15 @@ class SGApp(QWidget):
     def draw_window(self):
         self.window = QWidget()
         self.layout = QVBoxLayout()
+
+        self.button_sefa = QPushButton('SEFA')
+        self.button_sefa.clicked.connect(self.__select_sefa_fact)
+        self.layout.addWidget(self.button_sefa)
+        self.button_sefa.setDisabled(True)
+
+        self.button_interface = QPushButton('INTERFACE')
+        self.button_interface.clicked.connect(self.__select_interface_fact)
+        self.layout.addWidget(self.button_interface)
 
         self.latent_space_canvas = CanvasWidget(width=self.latent_dimension, 
                                                 height=100, 
@@ -186,14 +200,32 @@ class SGApp(QWidget):
         self.latent_vector[0, idx] = value
 
 
-    def apply_latent_transformation(self):
-        self.update_latent_transformation_weights()
-        self.latent_vector_trans = self.latent_transformer.transform(self.latent_vector, self.latent_transformation_weights)
-
-
     def sync_canvas(self):
         self.latent_space_canvas.clear()
         self.latent_space_canvas.paint_data(self.latent_vector)
+
+
+    def __select_sefa_fact(self):
+        self.__select_factorisation(TransformerClass.SEFA)
+        self.button_sefa.setDisabled(True)
+        self.button_interface.setDisabled(False)
+
+
+    def __select_interface_fact(self):
+        self.__select_factorisation(TransformerClass.INTERFACE)
+        self.button_sefa.setDisabled(False)
+        self.button_interface.setDisabled(True)
+
+
+    def __select_factorisation(self, tclass=TransformerClass.SEFA):
+        if tclass == TransformerClass.SEFA:
+            if self.sefa_fact_file is None:
+                self.sefa_fact_file = self.choose_sefa_factorization_file_dialog.choose_open_file_path()
+            self.latent_transformer = LatentTransformer(tclass, self.sefa_fact_file)
+        elif tclass == TransformerClass.INTERFACE:
+            if self.interface_fact_file is None:
+                self.interface_fact_file = self.choose_interface_factorization_file_dialog.choose_open_file_path()
+            self.latent_transformer = LatentTransformer(tclass, self.interface_fact_file)
 
 
     def __on_pin_latent_1(self):
@@ -261,10 +293,12 @@ class SGApp(QWidget):
         fade_out_ms = self.fade_out_slider.get_slider_value()
         offset_ms = self.offset_slider.get_slider_value()
 
-        self.apply_latent_transformation()
-
-        drum_generator = DGWorker(  saved_model=self.drum_model, 
-                                    latent_vector=self.latent_vector_trans, 
+        self.update_latent_transformation_weights()
+        
+        drum_generator = DGWorker(  saved_model=self.drum_model,
+                                    latent_transformer=self.latent_transformer, 
+                                    latent_vector=self.latent_vector, 
+                                    latent_transform_weights=self.latent_transformation_weights,
                                     fade_in_ms=fade_in_ms, 
                                     fade_out_ms=fade_out_ms,
                                     offset_ms=offset_ms)
@@ -304,6 +338,6 @@ class SGApp(QWidget):
 
 def run():
     app = QApplication([])
-    kgApp = SGApp()
+    kgApp = BGApp()
     kgApp.draw_window()
     sys.exit(app.exec_())

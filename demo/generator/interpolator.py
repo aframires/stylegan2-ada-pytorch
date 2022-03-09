@@ -7,7 +7,7 @@ from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 from demo.utils.audio_file import AudioFile, write_audio_file
 from demo.utils.path_utils import native_path_string
 
-from demo.sefa_generator.drum_generator import DGBatchWorker
+from demo.generator.drum_generator import DGBatchWorker
 
 class KGSignals(QObject):
     status_log = Signal(str)

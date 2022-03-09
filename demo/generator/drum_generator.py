@@ -1,11 +1,12 @@
 import torch
 from typing import List
-
+from numpy import expand_dims
 from training.training_loop import spec_to_audio
 
 from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 
 from demo.utils.audio_file import AudioFile
+from demo.generator.latent_transformer import LatentTransformer, TransformerClass
 
 class DGSignals(QObject):
     generation_finished = Signal(AudioFile)
@@ -13,6 +14,10 @@ class DGSignals(QObject):
 
 k_model_name                = 'StyleGAN2'
 k_sample_rate               = 44100 # TODO what sample rate is the model running at ?
+
+
+def z_to_w(G, label, truncation_psi, z):
+    return G.mapping(z, label, truncation_psi=truncation_psi, truncation_cutoff=8)[:,0,:]
 
 
 def format_dim_for_channels(audio_data):
@@ -48,17 +53,27 @@ def get_model_name():
     return "StyleGAN2"
 
 class DGWorker(QRunnable):
-    def __init__(self, saved_model: dict, latent_vector: torch.Tensor, fade_in_ms: float = None, fade_out_ms: float = None, offset_ms: float = None):
+    def __init__(self,
+                    saved_model: dict,
+                    latent_transformer: LatentTransformer, 
+                    latent_vector: torch.Tensor,
+                    latent_transform_weights: List[float],
+                    fade_in_ms: float = None, 
+                    fade_out_ms: float = None, 
+                    offset_ms: float = None):
+
         super(DGWorker, self).__init__()
 
-        self.drum_generator = saved_model.eval()
-        
+        self.drum_generator = saved_model
+        self.latent_transformer = latent_transformer
+
         self.model_name = get_model_name()
 
-        self.sample_rate = k_sample_rate 
+        self.sample_rate = k_sample_rate
         self.latent_dimension = self.drum_generator.z_dim
 
         self.latent_vector = latent_vector
+        self.latent_transform_weights = latent_transform_weights
 
         self.signals = DGSignals()
         self.fade_in_ms = fade_in_ms if fade_in_ms > 0 else None
@@ -68,7 +83,7 @@ class DGWorker(QRunnable):
 
     @Slot()
     def run(self):
-        self.signals.status_log.emit('Generating Kick Sample')        
+        self.signals.status_log.emit('Generating Drum Sample')        
 
         output_audio_data = format_dim_for_channels(self.generate_audio())
 
@@ -108,7 +123,11 @@ class DGWorker(QRunnable):
             if class_idx is not None:
                 print ('warn: --class=lbl ignored when running on an unconditional network')
 
-        spectrogram = self.drum_generator(self.latent_vector, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
+        style_vector = z_to_w(self.drum_generator, label, truncation_psi, self.latent_vector)
+        transformed_style_vector = self.latent_transformer.transform(style_vector, self.latent_transform_weights)
+        transformed_style_vector = transformed_style_vector.unsqueeze(1).repeat([1, self.drum_generator.num_ws, 1])
+        spectrogram = self.drum_generator.synthesis(transformed_style_vector, noise_mode=noise_mode, force_fp32=True)
+
         return spec_to_audio(spectrogram[0].numpy())
 
 
@@ -135,7 +154,7 @@ class DGBatchWorker(QRunnable):
         output_audio_files = []
         for idx, latent_vector in enumerate(self.latent_vectors):
 
-            self.signals.status_log.emit(f'Generating Kick Sample {idx + 1}')
+            self.signals.status_log.emit(f'Generating Drum Sample {idx + 1}')
 
             output_audio_data = format_dim_for_channels(self.generate_audio(latent_vector))
 

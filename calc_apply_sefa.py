@@ -192,4 +192,3 @@ if __name__ == "__main__":
                 audio = spec_to_audio(audio[0].cpu().numpy())
                 filename = os.path.join(semantic_folder, str(i) + '_' + str(d) + '.wav')
                 sf.write(filename, audio, 16000)
-

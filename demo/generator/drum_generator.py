@@ -6,14 +6,14 @@ from training.training_loop import spec_to_audio
 from PySide2.QtCore import QRunnable, QObject, Signal, Slot
 
 from demo.utils.audio_file import AudioFile
-from demo.generator.latent_transformer import LatentTransformer, TransformerClass
+from demo.generator.latent_transformer import LatentTransformer
 
 class DGSignals(QObject):
     generation_finished = Signal(AudioFile)
     status_log = Signal(str)
 
 k_model_name                = 'StyleGAN2'
-k_sample_rate               = 44100 # TODO what sample rate is the model running at ?
+k_sample_rate               = 16000
 
 
 def z_to_w(G, label, truncation_psi, z):

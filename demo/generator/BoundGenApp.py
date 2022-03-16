@@ -6,7 +6,7 @@ import dnnlib
 import legacy
 import functools
 
-from PySide2.QtWidgets import QWidget, QPushButton, QVBoxLayout, QTextBrowser, QApplication
+from PySide2.QtWidgets import QWidget, QPushButton, QVBoxLayout, QGridLayout, QTextBrowser, QApplication
 from PySide2.QtCore import QThreadPool
 from PySide2.QtMultimedia import QSound
 
@@ -31,7 +31,7 @@ k_window_width  = 150
 
 k_tmp_file_path = 'tmp.wav'
 
-k_num_transform_weights = 4
+k_num_transform_weights = 7
 
 class BGApp(QWidget):
     def __init__(self):
@@ -87,107 +87,122 @@ class BGApp(QWidget):
 
     def draw_window(self):
         self.window = QWidget()
-        self.layout = QVBoxLayout()
+        self.control_layout = QVBoxLayout()
 
+        self.control_buttons = QGridLayout()
         self.button_sefa = QPushButton('SEFA')
         self.button_sefa.clicked.connect(self.__select_sefa_fact)
-        self.layout.addWidget(self.button_sefa)
+        self.control_buttons.addWidget(self.button_sefa, 0, 0)
         self.button_sefa.setDisabled(True)
 
         self.button_interface = QPushButton('INTERFACE')
         self.button_interface.clicked.connect(self.__select_interface_fact)
-        self.layout.addWidget(self.button_interface)
+        self.control_buttons.addWidget(self.button_interface, 0, 1)
+
+        self.control_layout.addLayout(self.control_buttons)
 
         self.latent_space_canvas = CanvasWidget(width=self.latent_dimension, 
                                                 height=100, 
                                                 data_update_fctr=self.update_latent_vector,
                                                 sync_fctr=self.sync_canvas)
-        self.layout.addWidget(self.latent_space_canvas)
+        self.control_layout.addWidget(self.latent_space_canvas)
         self.latent_space_canvas.paint_data(self.latent_vector)
 
         self.button_generate_sample = QPushButton('Generate Drum Sample')
         self.button_generate_sample.clicked.connect(self.__on_generate_drum)
-        self.layout.addWidget(self.button_generate_sample)
+        self.control_layout.addWidget(self.button_generate_sample)
 
-        self.layout.addWidget(HorLineWidget())
+        self.control_layout.addWidget(HorLineWidget())
 
         self.button_generate_random_sample = QPushButton('Generate Random Drum Sample')
         self.button_generate_random_sample.clicked.connect(self.__on_generate_random_drum)
-        self.layout.addWidget(self.button_generate_random_sample)
+        self.control_layout.addWidget(self.button_generate_random_sample)
 
-        self.layout.addWidget(HorLineWidget())
+        self.control_layout.addWidget(HorLineWidget())
 
         self.button_playback = QPushButton('Play Sample!')
         self.button_playback.clicked.connect(self.__on_play_generated_drum)
-        self.layout.addWidget(self.button_playback)
+        self.control_layout.addWidget(self.button_playback)
 
         # requires a generated audio file
         self.button_playback.setDisabled(True)
 
         self.button_save_to_disk = QPushButton('Save Generated Sample')
         self.button_save_to_disk.clicked.connect(self.__on_save_generated_sample)
-        self.layout.addWidget(self.button_save_to_disk)
+        self.control_layout.addWidget(self.button_save_to_disk)
         # requires a generated audio file to be enabled
         self.button_save_to_disk.setDisabled(True)
 
-        self.layout.addWidget(HorLineWidget())
+        self.control_layout.addWidget(HorLineWidget())
 
         self.fade_in_slider = SliderWidget('Fade-in (ms)', 10, 0, 0.1, 1)
-        self.layout.addWidget(self.fade_in_slider.get_slider_label_widget())
-        self.layout.addWidget(self.fade_in_slider.get_slider_widget())        
+        self.control_layout.addWidget(self.fade_in_slider.get_slider_label_widget())
+        self.control_layout.addWidget(self.fade_in_slider.get_slider_widget())        
         
         self.fade_out_slider = SliderWidget('Fade-out (ms)', 200, 0, 1, 100)
-        self.layout.addWidget(self.fade_out_slider.get_slider_label_widget())
-        self.layout.addWidget(self.fade_out_slider.get_slider_widget())
+        self.control_layout.addWidget(self.fade_out_slider.get_slider_label_widget())
+        self.control_layout.addWidget(self.fade_out_slider.get_slider_widget())
 
         self.offset_slider = SliderWidget('Offset (ms)', 20, 0, 0.1, 0)
-        self.layout.addWidget(self.offset_slider.get_slider_label_widget())
-        self.layout.addWidget(self.offset_slider.get_slider_widget())
+        self.control_layout.addWidget(self.offset_slider.get_slider_label_widget())
+        self.control_layout.addWidget(self.offset_slider.get_slider_widget())
         
-        self.layout.addWidget(HorLineWidget())
+        self.control_layout.addWidget(HorLineWidget())
+
+
+        self.transformation_layout = QVBoxLayout()
 
         self.latent_transform_val_sliders = []
+        self.slider_labels = []
         for transform_weight_idx in range(k_num_transform_weights):
-            self.latent_transform_val_sliders.append(SliderWidget(f'{transform_weight_idx}', 1, -1, 0.01, 0, vertical=False, position_idx=transform_weight_idx))
-            self.layout.addWidget(self.latent_transform_val_sliders[transform_weight_idx].get_slider_label_widget())
-            self.layout.addWidget(self.latent_transform_val_sliders[transform_weight_idx].get_slider_widget())
+            self.latent_transform_val_sliders.append(SliderWidget("", 1, -1, 0.01, 0, vertical=False, position_idx=transform_weight_idx))
+            self.transformation_layout.addWidget(self.latent_transform_val_sliders[transform_weight_idx].get_slider_label_widget())
+            self.transformation_layout.addWidget(self.latent_transform_val_sliders[transform_weight_idx].get_slider_widget())
+
+        self.__update_transformation_labels()
 
         # self.num_round_robin_slider = SliderWidget('Num Round Robin', 15, 2, 1, 10)
-        # self.layout.addWidget(self.num_round_robin_slider.get_slider_label_widget())
-        # self.layout.addWidget(self.num_round_robin_slider.get_slider_widget())
+        # self.control_layout.addWidget(self.num_round_robin_slider.get_slider_label_widget())
+        # self.control_layout.addWidget(self.num_round_robin_slider.get_slider_widget())
 
         # self.variation_round_robin_slider = SliderWidget('Round Robin Spread', 10, 1, 1, 2)
-        # self.layout.addWidget(self.variation_round_robin_slider.get_slider_label_widget())
-        # self.layout.addWidget(self.variation_round_robin_slider.get_slider_widget())
+        # self.control_layout.addWidget(self.variation_round_robin_slider.get_slider_label_widget())
+        # self.control_layout.addWidget(self.variation_round_robin_slider.get_slider_widget())
 
         # self.button_round_robin = QPushButton('Generate Round Robin')
         # self.button_round_robin.clicked.connect(self.__on_generate_round_robin)
-        # self.layout.addWidget(self.button_round_robin)
+        # self.control_layout.addWidget(self.button_round_robin)
 
-        # self.layout.addWidget(HorLineWidget())
+        # self.control_layout.addWidget(HorLineWidget())
 
         # self.button_pin_latent_1 = QPushButton('Pin Sample 1')
         # self.button_pin_latent_1.clicked.connect(self.__on_pin_latent_1)
-        # self.layout.addWidget(self.button_pin_latent_1)
+        # self.control_layout.addWidget(self.button_pin_latent_1)
         # self.button_pin_latent_2 = QPushButton('Pin Sample 2')
         # self.button_pin_latent_2.clicked.connect(self.__on_pin_latent_2)
-        # self.layout.addWidget(self.button_pin_latent_2)
+        # self.control_layout.addWidget(self.button_pin_latent_2)
 
         # self.num_interpolation_steps_slider = SliderWidget('Num Interpolation Steps', 15, 2, 1, 10)
-        # self.layout.addWidget(self.num_interpolation_steps_slider.get_slider_label_widget())
-        # self.layout.addWidget(self.num_interpolation_steps_slider.get_slider_widget())
+        # self.control_layout.addWidget(self.num_interpolation_steps_slider.get_slider_label_widget())
+        # self.control_layout.addWidget(self.num_interpolation_steps_slider.get_slider_widget())
 
         # self.button_interpolation = QPushButton('Generate Sample Interpolation')
         # self.button_interpolation.clicked.connect(self.__on_generate_interpolated_samples)
-        # self.layout.addWidget(self.button_interpolation)
+        # self.control_layout.addWidget(self.button_interpolation)
         # self.button_interpolation.setDisabled(True)
 
+        self.grid_layout = QGridLayout()
+
+        self.grid_layout.addLayout(self.control_layout, 0, 0)
+        self.grid_layout.addLayout(self.transformation_layout, 0, 1)
+        self.grid_layout.setColumnMinimumWidth(1, 400)
+
         self.text_box = QTextBrowser()
-        self.layout.addWidget(self.text_box)
+        self.grid_layout.addWidget(self.text_box, 1, 0)
 
         self.window.resize(k_window_height, k_window_width)
         self.window.setWindowTitle(k_app_title)
-        self.window.setLayout(self.layout)
+        self.window.setLayout(self.grid_layout)
         self.window.show()
 
 
@@ -205,16 +220,24 @@ class BGApp(QWidget):
         self.latent_space_canvas.paint_data(self.latent_vector)
 
 
+    def __update_transformation_labels(self):
+        label_list = self.latent_transformer.get_dim_labels(k_num_transform_weights)
+        for slider_label, val_slider in zip(label_list, self.latent_transform_val_sliders):
+            val_slider.set_slider_title(slider_label)
+
+
     def __select_sefa_fact(self):
         self.__select_factorisation(TransformerClass.SEFA)
         self.button_sefa.setDisabled(True)
         self.button_interface.setDisabled(False)
+        self.__update_transformation_labels()
 
 
     def __select_interface_fact(self):
         self.__select_factorisation(TransformerClass.INTERFACE)
         self.button_sefa.setDisabled(False)
         self.button_interface.setDisabled(True)
+        self.__update_transformation_labels()
 
 
     def __select_factorisation(self, tclass=TransformerClass.SEFA):

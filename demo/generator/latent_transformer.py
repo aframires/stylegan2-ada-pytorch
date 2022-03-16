@@ -12,6 +12,9 @@ class SefaTransformer():
         self.eigvecs = load(factorisation_file_path)["eigvec"]
         self.degree_scaler = degree_scaler
 
+    def get_dim_labels(self, n):
+        return [f"{idx}" for idx in range(n)]
+
     def transform(self, latent_data, transform_weights):
         for idx, degree in enumerate(transform_weights):
             latent_data += self.__direction(idx, degree)
@@ -27,6 +30,9 @@ class InterfaceTransformer():
     def __init__(self, factorisation_file_path, degree_scaler):
         self.boundaries = load(factorisation_file_path)
         self.degree_scaler = degree_scaler
+
+    def get_dim_labels(self, n):
+        return [str(key) for idx, key in enumerate(self.boundaries.keys()) if idx < n]
 
     def transform(self, latent_data, transform_weights):
         for boundary, degree in zip(list(self.boundaries.values()), transform_weights):
@@ -47,3 +53,6 @@ class LatentTransformer():
 
     def transform(self, latent_data, transform_weights):
         return self.transformer.transform(latent_data, transform_weights)
+
+    def get_dim_labels(self, n):
+        return self.transformer.get_dim_labels(n)

@@ -45,6 +45,9 @@ class SliderWidget(QWidget):
         slider_value = self.slider_widget.value()
         self.label_widget.setText(self.title + ': ' + str(self.step_size * slider_value))
 
+    def set_slider_title(self, title):
+        self.title = title
+        self.set_slider_value_text()
 
     def get_slider_label_widget(self):
         return self.label_widget

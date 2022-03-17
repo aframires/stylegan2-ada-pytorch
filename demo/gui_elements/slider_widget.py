@@ -1,6 +1,8 @@
 from PySide2.QtCore import Qt
 from PySide2.QtWidgets import QWidget, QLabel, QSlider
 
+from typing import Callable
+
 class SliderWidget(QWidget):
     def __init__(   self, 
                     slider_title: str, 
@@ -10,6 +12,8 @@ class SliderWidget(QWidget):
                     init_value: int=None,
                     vertical: bool=False,
                     position_idx: int=None,
+                    on_change_callback: Callable=None,
+                    label_precision: int=2,
                     parent=None):
         super(SliderWidget, self).__init__(parent)
 
@@ -39,11 +43,15 @@ class SliderWidget(QWidget):
         self.slider_widget.setTickInterval(self.step_size)
     
         self.slider_widget.valueChanged.connect(self.set_slider_value_text)
+        self.on_change_callback = on_change_callback
+
+        self.label_precision = label_precision
 
 
     def set_slider_value_text(self):
         slider_value = self.slider_widget.value()
-        self.label_widget.setText(self.title + ': ' + str(self.step_size * slider_value))
+        self.label_widget.setText(self.title + ': ' + f"{self.step_size * slider_value:.{self.label_precision}f}")
+        if self.on_change_callback is not None: self.on_change_callback()
 
     def set_slider_title(self, title):
         self.title = title
@@ -52,15 +60,12 @@ class SliderWidget(QWidget):
     def get_slider_label_widget(self):
         return self.label_widget
 
-
     def get_slider_widget(self):
         return self.slider_widget
     
-
     def get_slider_value(self):
         return self.step_size * self.slider_widget.value()
 
-    
     def get_position_idx(self):
         return self.position_idx
 

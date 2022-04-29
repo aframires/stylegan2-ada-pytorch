@@ -2,7 +2,12 @@
 <html lang="en-US">
 
 <head>
-
+<style>
+    img.resize {
+        max-width:50%;
+        max-height:50%;
+        }
+</style>
 </head>
 
 <body>
@@ -161,10 +166,728 @@
                 </tr>                        
             </table>
             
-            <h3 id="generation">Latent Space Semantic Directions</h3>
-            <p>In this section, we present examples of moving in the directions found by SeFa and InterfaceGAN </p>
-            <p>The examples will be uploaded soon...</p>
+            <h3 id="generation">Latent Space Interface</h3>
+            <h4 id="zspace">Generating Drums in the Z-Space</h4>
+            <p>The first interface presented to the users for generating drums is the 512 dimensional latent Z-Space. </p>
+            <p>We show examples of the interface along with the sounds they produce:</p>
+            <table>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_1.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_1.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_2.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_2.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_3.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_3.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_4.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_4.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_5.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_5.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_6.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_6.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_7.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_7.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_8.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_8.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_9.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_9.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <img src="zspace_examples/zspace_sample_10.png" alt="ZSpace Examples">
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="zspace_examples/sample_10.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
 
+
+
+            <h4 id="zspace">Modifying a Seed with SeFa</h4>
+            <p>The second interface presented to the users for generating drums is the 7 directions obtained from the SeFa algorithm. </p>
+            <p>We show examples of modifying each of the first 5 directions, from -80 to +80:</p>
+            <p></p>
+            <p>1st Direction</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s1_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>2nd Direction</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s2_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>3rd Direction</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s3_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>4th Direction</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s4_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>5th Direction</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/sefa/s5_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+
+
+
+
+            <h4 id="zspace">Modifying a Seed with InterfaceGAN</h4>
+            <p>The third interface presented to the users for generating drums is the 7 directions obtained from the InterfaceGAN
+                algorithm. </p>
+            <p>We show examples of modifying each of the first 5 directions, from -80 to +80:</p>
+            <p></p>
+            <p>Hardness</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s1_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>Depth</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s2_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>Brightness</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s3_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>Roughness</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s4_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
+            <p>Warmth</p>
+            <table>
+                <tr>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0-80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0-60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0-40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0-20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/init.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0+20.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0+40.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0+60.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                    <td>
+                        <audio controls preload="none">
+                            <source src="sefa_vs_interface/interface/s5_0+80.wav" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </td>
+                </tr>
+            </table>
         </section>
 <footer>
 
